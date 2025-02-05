@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     try:
-        estimated_q_values = play_games(chess_data.head(1000))
+        estimated_q_values = play_games(chess_data.head(100))
     except Exception as e:
         logger.critical(f'q table generation interrupted because of:  {e}')
         logger.critical(traceback.format_exc())
