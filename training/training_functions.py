@@ -2,7 +2,7 @@
 
 from typing import Callable, List
 import pandas as pd
-from agents import Agent
+from agents.Agent import Agent
 from utils import game_settings
 from environment.Environ import Environ
 from multiprocessing import Pool, cpu_count

@@ -29,13 +29,13 @@ if __name__ == '__main__':
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     try:
-        estimated_q_values = play_games(chess_data.head(100))
+        corrupted_games = play_games(chess_data.head(100))
     except Exception as e:
         logger.critical(f'q table generation interrupted because of:  {e}')
         logger.critical(traceback.format_exc())
         exit(1)
 
-    print(estimated_q_values.iloc[:, :10])
+    print(corrupted_games)
 
     # chess_data.to_pickle(game_settings.chess_games_filepath_part_1, compression = 'zip')
     
