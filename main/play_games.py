@@ -8,7 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import traceback
 from utils import game_settings
 import logging
-from training.training_functions import worker_play_games
+from training.training_functions import play_games
 
 
 logger = logging.getLogger("worker_play_games")
@@ -29,15 +29,15 @@ if __name__ == '__main__':
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     try:
-        estimated_q_values = worker_play_games(chess_data.head(1000))
+        estimated_q_values = play_games(chess_data.head(1000))
     except Exception as e:
         logger.critical(f'q table generation interrupted because of:  {e}')
-        logger.critical(traceback.format_exc())  # This will print the full traceback
+        logger.critical(traceback.format_exc())
         exit(1)
 
     print(estimated_q_values.iloc[:, :10])
 
-    # estimated_q_values.to_pickle(game_settings.est_q_vals_filepath_part_1, compression = 'zip')
+    # chess_data.to_pickle(game_settings.chess_games_filepath_part_1, compression = 'zip')
     
     end_time = time.time()
     total_time = end_time - start_time

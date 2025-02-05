@@ -13,8 +13,7 @@ helper_methods_logger_filepath = base_directory / ".." / "debug" / "helper_metho
 agent_logger_filepath = base_directory / ".." / "debug" / "agent_logger_file.txt"
 environ_logger_filepath = base_directory / ".." / "debug" / "environ_logger_file.txt"
 training_functions_logger_filepath = base_directory / ".." / "debug" / "training_functions_logger_file.txt"
-generate_q_est_logger_filepath = base_directory / ".." / "debug" / "generate_q_est_logger_file.txt"
-
+play_games_logger_filepath = base_directory / ".." / "debug" / "play_games_logger_file.txt"
 
 chess_games_filepath_part_1 = base_directory / ".." / "chess_data" / "chess_games_part_1.pkl"
 chess_games_filepath_part_2 = base_directory / ".." / "chess_data" / "chess_games_part_2.pkl"
