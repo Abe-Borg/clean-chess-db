@@ -8,13 +8,13 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import traceback
 from utils import game_settings
 import logging
-from training.training_functions import generate_q_est_df
+from training.training_functions import worker_play_games
 
 
-logger = logging.getLogger("generate_q_est_df")
+logger = logging.getLogger("worker_play_games")
 logger.setLevel(logging.CRITICAL)
 if not logger.handlers:
-    fh = logging.FileHandler(game_settings.generate_q_est_logger_filepath)
+    fh = logging.FileHandler(game_settings.play_games_logger_filepath)
     fh.setLevel(logging.CRITICAL)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     fh.setFormatter(formatter)
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     try:
-        estimated_q_values = generate_q_est_df(chess_data.head(1000))
+        estimated_q_values = worker_play_games(chess_data.head(1000))
     except Exception as e:
         logger.critical(f'q table generation interrupted because of:  {e}')
         logger.critical(traceback.format_exc())  # This will print the full traceback
