@@ -22,7 +22,7 @@ def play_games(chess_data):
     game_indices = list(chess_data.index)
     return process_games_in_parallel(game_indices, worker_play_games, chess_data)
 
-def process_games_in_parallel(game_indices: List[str], worker_function: Callable[..., pd.DataFrame], *args):
+def process_games_in_parallel(game_indices: List[str], worker_function: Callable[..., List], *args) -> List:
     num_processes = min(cpu_count(), len(game_indices))
     chunks = chunkify(game_indices, num_processes)
     
@@ -32,42 +32,50 @@ def process_games_in_parallel(game_indices: List[str], worker_function: Callable
     return corrupted_games_list
 
 def worker_play_games(game_indices_chunk, chess_data):
+    corrupted_games = []
     w_agent = Agent('W')
     b_agent = Agent('B')
     environ = Environ()
 
     for game_number in game_indices_chunk:
         try:
-            play_one_game(game_number, chess_data, w_agent, b_agent, environ)
+            result = play_one_game(game_number, chess_data, w_agent, b_agent, environ)
+            # If a corrupted game is detected, 'result' is not an empty list.
+            if result:
+                corrupted_games.append(game_number)
         except Exception as e:
             logger.critical(f"Error processing game {game_number} in worker_train_games: {str(e)}")
-            continue
+            corrupted_games.append(game_number)
 
         environ.reset_environ()
+    return corrupted_games
 
 def play_one_game(game_number, chess_data, w_agent, b_agent, environ):
     num_moves = chess_data.at[game_number, 'PlyCount']
     curr_state = environ.get_curr_state()
     while curr_state['turn_index'] < num_moves:
         try:
-            corrupted_game: List[str] = handle_agent_turn(
+            result: List[str] = handle_agent_turn(
                 agent=w_agent,
                 chess_data=chess_data,
                 curr_state=curr_state,
                 game_number=game_number,
                 environ=environ,
             )
+
+            if result: # If a corrupted game is flagged, return immediately.
+                return result
             
             curr_state = environ.get_curr_state()
         except Exception as e:
             logger.critical(f'error during white agent turn in game {game_number}: {str(e)}')
-            break
+            return game_number
 
         if environ.board.is_game_over():
             break
 
         try:
-            corrupted_game = handle_agent_turn(
+            result = handle_agent_turn(
                 agent=b_agent,
                 chess_data=chess_data,
                 curr_state=curr_state,
@@ -75,15 +83,18 @@ def play_one_game(game_number, chess_data, w_agent, b_agent, environ):
                 environ=environ,
             )
 
+            if result: # If a corrupted game is flagged, return immediately.
+                return result
+
             curr_state = environ.get_curr_state()
         except Exception as e:
             logger.critical(f'error during black agent turn in game {game_number}: {str(e)}')
-            break
+            return game_number
 
         if environ.board.is_game_over():
             break 
             
-    return corrupted_game
+    return [] # Return empty list if no corruption was detected
 
 def handle_agent_turn(agent, chess_data, curr_state, game_number, environ):
     curr_turn = curr_state['curr_turn']
@@ -96,7 +107,6 @@ def handle_agent_turn(agent, chess_data, curr_state, game_number, environ):
 
     apply_move_and_update_state(chess_move, environ)
     curr_state = environ.get_curr_state()
-    next_turn = curr_state['curr_turn']
 
     # return empty list if game is not corrupted.
     return []
