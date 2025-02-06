@@ -2,3 +2,4 @@ chess_data/
 venv/
 *.pyc
 src/__pycache__/
+"Misc Code Testing.ipynb"

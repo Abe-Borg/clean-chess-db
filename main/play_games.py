@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     try:
-        corrupted_games = play_games(chess_data.head(1000))
+        corrupted_games = play_games(chess_data)
     except Exception as e:
         logger.critical(f'db cleanup interrupted because of:  {e}')
         logger.critical(traceback.format_exc())
