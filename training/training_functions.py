@@ -51,7 +51,9 @@ def play_one_game(game_number, chess_data, w_agent, b_agent, environ):
     num_moves = chess_data.at[game_number, 'PlyCount']
     curr_state = environ.get_curr_state()
     while curr_state['turn_index'] < num_moves:
-        result: List[str] = handle_agent_turn(
+        if environ.board.is_game_over():
+            break
+        result = handle_agent_turn(
             agent=w_agent,
             chess_data=chess_data,
             curr_state=curr_state,
@@ -59,7 +61,7 @@ def play_one_game(game_number, chess_data, w_agent, b_agent, environ):
             environ=environ,
         )
 
-        if result: # If a corrupted game is flagged, return immediately.
+        if result: 
             return result
             
         curr_state = environ.get_curr_state()
@@ -74,26 +76,31 @@ def play_one_game(game_number, chess_data, w_agent, b_agent, environ):
             environ=environ,
         )
 
-        if result: # If a corrupted game is flagged, return immediately.
+        if result:
             return result
 
         curr_state = environ.get_curr_state()
         if environ.board.is_game_over():
             break 
             
-    return '' # Return empty string if no corruption was detected
+    return ''
 
 def handle_agent_turn(agent, chess_data, curr_state, game_number, environ) -> str:
     curr_turn = curr_state['curr_turn']
+    if curr_turn not in chess_data.columns:
+        return ''  # Game ended naturally, not corrupt
+    
     chess_move = agent.choose_action(chess_data, curr_state, game_number)
     
     if chess_move not in environ.get_legal_moves():
-        logger.critical(f"Invalid move '{chess_move}' for game {game_number}, turn {curr_turn}. Skipping.")
-        # log illegal move in specific game. will need this to remove corrupted games later. 
+        legal_moves = environ.get_legal_moves() 
+        board_fen = environ.board.fen() 
+        logger.critical(f"Invalid move '{chess_move}' for game {game_number}, turn {curr_turn}. ")
+        logger.critical(f"  Legal moves at this state: {legal_moves}") 
+        logger.critical(f"  Board FEN: {board_fen}")
         return game_number
 
     apply_move_and_update_state(chess_move, environ)
-    curr_state = environ.get_curr_state()
 
     # return empty string if game is not corrupted.
     return ''
