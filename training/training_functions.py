@@ -27,8 +27,9 @@ def process_games_in_parallel(game_indices: List[str], worker_function: Callable
     chunks = chunkify(game_indices, num_processes)
     
     with Pool(processes=num_processes) as pool:
-        corrupted_games_list = pool.starmap(worker_function, [(chunk, *args) for chunk in chunks])
-             
+        results = pool.starmap(worker_function, [(chunk, *args) for chunk in chunks])
+    
+    corrupted_games_list = [game for sublist in results for game in sublist]
     return corrupted_games_list
 
 def worker_play_games(game_indices_chunk, chess_data):
