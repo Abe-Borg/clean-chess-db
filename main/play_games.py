@@ -11,7 +11,7 @@ import logging
 from training.training_functions import play_games
 
 
-logger = logging.getLogger("worker_play_games")
+logger = logging.getLogger("play_games")
 logger.setLevel(logging.CRITICAL)
 if not logger.handlers:
     fh = logging.FileHandler(game_settings.play_games_logger_filepath)
@@ -29,17 +29,17 @@ if __name__ == '__main__':
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     try:
-        corrupted_games = play_games(chess_data.head(100))
+        corrupted_games = play_games(chess_data.head(1000))
     except Exception as e:
-        logger.critical(f'q table generation interrupted because of:  {e}')
+        logger.critical(f'db cleanup interrupted because of:  {e}')
         logger.critical(traceback.format_exc())
         exit(1)
 
-    print(corrupted_games)
-
-    # chess_data.to_pickle(game_settings.chess_games_filepath_part_1, compression = 'zip')
-    
     end_time = time.time()
     total_time = end_time - start_time
-    print('q table generation is complete')
+    print(f'corrupt games list: {len(corrupted_games)}')
+    print('db cleanup is complete')
     print(f'total time: {total_time} seconds')
+
+    chess_data = chess_data.drop(corrupted_games)
+    chess_data.to_pickle(game_settings.chess_games_filepath_part_1, compression = 'zip')
