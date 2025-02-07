@@ -96,7 +96,6 @@ def handle_agent_turn(agent, chess_data, curr_state, game_number, environ) -> st
     chess_move = agent.choose_action(chess_data, curr_state, game_number)
 
     if chess_move == '' or pd.isna(chess_move):
-        logger.critical(f"Game ended due to empty legal moves list or nan value:  '{chess_move}' , game {game_number}, turn {curr_turn}. ")
         return ''
     
     if chess_move not in environ.get_legal_moves():
