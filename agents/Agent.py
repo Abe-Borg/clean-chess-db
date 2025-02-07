@@ -11,8 +11,4 @@ class Agent:
         if not legal_moves:
             return ''
           
-        return self.policy_training_mode(chess_data, curr_game, environ_state["curr_turn"])
-    
-    def policy_training_mode(self, chess_data: pd.DataFrame, curr_game: str, curr_turn: str) -> str:
-        chess_move = chess_data.at[curr_game, curr_turn]
-        return chess_move
+        return chess_data.at[curr_game, environ_state["curr_turn"]]

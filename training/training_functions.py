@@ -86,20 +86,16 @@ def play_one_game(game_number, chess_data, w_agent, b_agent, environ):
     return ''
 
 def handle_agent_turn(agent, chess_data, curr_state, game_number, environ) -> str:
-    curr_turn = curr_state['curr_turn']
-    if curr_turn not in chess_data.columns:
-        return ''  # Game ended naturally, not corrupt
-    
+    curr_turn = curr_state['curr_turn']    
     chess_move = agent.choose_action(chess_data, curr_state, game_number)
 
-    if chess_move and chess_move not in environ.get_legal_moves():
-        legal_moves = environ.get_legal_moves() 
-        board_fen = environ.board.fen() 
+    if not chess_move:
+        logger.critical(f"Game ended due to empty legal moves list:  '{chess_move}' , game {game_number}, turn {curr_turn}. ")
+    
+    if chess_move not in environ.get_legal_moves():
         logger.critical(f"Invalid move '{chess_move}' for game {game_number}, turn {curr_turn}. ")
-        logger.critical(f"  Legal moves at this state: {legal_moves}") 
-        logger.critical(f"  Board FEN: {board_fen}")
         return game_number
-
+    
     apply_move_and_update_state(chess_move, environ)
 
     # return empty string if game is not corrupted.
