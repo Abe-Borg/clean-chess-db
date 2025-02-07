@@ -91,7 +91,7 @@ def handle_agent_turn(agent, chess_data, curr_state, game_number, environ) -> st
         return ''  # Game ended naturally, not corrupt
     
     chess_move = agent.choose_action(chess_data, curr_state, game_number)
-    
+
     if chess_move and chess_move not in environ.get_legal_moves():
         legal_moves = environ.get_legal_moves() 
         board_fen = environ.board.fen() 

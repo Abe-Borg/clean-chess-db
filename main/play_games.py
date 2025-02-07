@@ -42,5 +42,5 @@ if __name__ == '__main__':
     print('db cleanup is complete')
     print(f'total time: {total_time} seconds')
 
-    chess_data = chess_data.drop(corrupted_games)
-    chess_data.to_pickle(game_settings.chess_games_filepath_part_1, compression = 'zip')
+    # chess_data = chess_data.drop(corrupted_games)
+    # chess_data.to_pickle(game_settings.chess_games_filepath_part_1, compression = 'zip')
