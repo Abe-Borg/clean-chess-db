@@ -1,5 +1,6 @@
 # play_games.py
 
+import numpy as np
 import pandas as pd
 import time
 import sys
@@ -23,23 +24,26 @@ if not logger.handlers:
 
 if __name__ == '__main__':
     start_time = time.time()
-    
     # !!!!!!!!!!!!!!!!! change this each time for new section of the database  !!!!!!!!!!!!!!!!!
-    chess_data = pd.read_pickle(game_settings.chess_games_filepath_part_1, compression='zip')
+    # chess_data = pd.read_pickle(game_settings.chess_games_filepath_part_1, compression='zip')
     # chess_data = chess_data.head(10000)
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    try:
-        corrupted_games = play_games(chess_data)
-    except Exception as e:
-        logger.critical(f'db cleanup interrupted because of:  {e}')
-        logger.critical(traceback.format_exc())
-        exit(1)
-
+    for part in range(1, 101):
+        # Dynamically retrieve the file path from game_settings.
+        file_path = getattr(game_settings, f'chess_games_filepath_part_{part}')
+        
+        try:
+            chess_data = pd.read_pickle(file_path, compression='zip')
+            corrupted_games = play_games(chess_data)           
+            chess_data = chess_data.drop(corrupted_games)
+            chess_data.to_pickle(file_path, compression='zip')        
+        except Exception as e:
+            print(f"Error processing {file_path}: {e}")
+            logger.critical(f'db cleanup interrupted because of:  {e}')
+            logger.critical(traceback.format_exc())
+            exit(1)
+        
     end_time = time.time()
     total_time = end_time - start_time
     print(f'corrupt games list length: {len(corrupted_games)}')
     print(f'total time: {total_time} seconds')
-
-    chess_data = chess_data.drop(corrupted_games)
-    chess_data.to_pickle(game_settings.chess_games_filepath_part_1, compression = 'zip')
