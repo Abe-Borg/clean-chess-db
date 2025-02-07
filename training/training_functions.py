@@ -41,18 +41,22 @@ def worker_play_games(game_indices_chunk, chess_data):
     for game_number in game_indices_chunk:
         result = play_one_game(game_number, chess_data, w_agent, b_agent, environ)
         # If a corrupted game is detected, 'result' is not an empty list.
-        if result:
+        if result != '':
             corrupted_games.append(game_number)
 
         environ.reset_environ()
     return corrupted_games
 
+
 def play_one_game(game_number, chess_data, w_agent, b_agent, environ):
     num_moves = chess_data.at[game_number, 'PlyCount']
     curr_state = environ.get_curr_state()
+
     while curr_state['turn_index'] < num_moves:
         if environ.board.is_game_over():
             break
+
+        # result will be '' if game ended normally, otherwise it will be the game_number
         result = handle_agent_turn(
             agent=w_agent,
             chess_data=chess_data,
@@ -61,8 +65,9 @@ def play_one_game(game_number, chess_data, w_agent, b_agent, environ):
             environ=environ,
         )
 
-        if result: 
-            return result
+        # if the result is not '', it means the game ended due to an invalid move
+        if result != '': 
+            return result # return the corrupted game_number
             
         curr_state = environ.get_curr_state()
         if environ.board.is_game_over():
@@ -76,30 +81,29 @@ def play_one_game(game_number, chess_data, w_agent, b_agent, environ):
             environ=environ,
         )
 
-        if result:
-            return result
+        if result != '': 
+            return result # return the corrupted game_number
 
         curr_state = environ.get_curr_state()
         if environ.board.is_game_over():
             break 
             
-    return ''
+    return '' # return '' if the game ended normally
+
 
 def handle_agent_turn(agent, chess_data, curr_state, game_number, environ) -> str:
     curr_turn = curr_state['curr_turn']    
     chess_move = agent.choose_action(chess_data, curr_state, game_number)
 
-    if not chess_move:
-        logger.critical(f"Game ended due to empty legal moves list:  '{chess_move}' , game {game_number}, turn {curr_turn}. ")
+    if chess_move == '' or pd.isna(chess_move):
+        logger.critical(f"Game ended due to empty legal moves list or nan value:  '{chess_move}' , game {game_number}, turn {curr_turn}. ")
+        return ''
     
     if chess_move not in environ.get_legal_moves():
         logger.critical(f"Invalid move '{chess_move}' for game {game_number}, turn {curr_turn}. ")
         return game_number
     
     apply_move_and_update_state(chess_move, environ)
-
-    # return empty string if game is not corrupted.
-    return ''
 
 def apply_move_and_update_state(chess_move: str, environ) -> None:
     environ.board.push_san(chess_move)

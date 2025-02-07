@@ -26,7 +26,7 @@ if __name__ == '__main__':
     
     # !!!!!!!!!!!!!!!!! change this each time for new section of the database  !!!!!!!!!!!!!!!!!
     chess_data = pd.read_pickle(game_settings.chess_games_filepath_part_1, compression='zip')
-    chess_data = chess_data.head(1000)
+    chess_data = chess_data.head(10000)
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     try:
