@@ -104,6 +104,7 @@ def handle_agent_turn(agent, chess_data, curr_state, game_number, environ) -> st
         return game_number
     
     apply_move_and_update_state(chess_move, environ)
+    return ''
 
 def apply_move_and_update_state(chess_move: str, environ) -> None:
     environ.board.push_san(chess_move)

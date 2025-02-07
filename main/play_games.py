@@ -26,7 +26,7 @@ if __name__ == '__main__':
     
     # !!!!!!!!!!!!!!!!! change this each time for new section of the database  !!!!!!!!!!!!!!!!!
     chess_data = pd.read_pickle(game_settings.chess_games_filepath_part_1, compression='zip')
-    chess_data = chess_data.head(10000)
+    chess_data = chess_data.head(10)
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     try:
@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     end_time = time.time()
     total_time = end_time - start_time
-    print(f'corrupt games list: {len(corrupted_games)}')
+    print(f'corrupt games list: {corrupted_games}')
     print('db cleanup is complete')
     print(f'total time: {total_time} seconds')
 
