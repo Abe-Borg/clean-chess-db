@@ -24,7 +24,7 @@ if not logger.handlers:
 
 if __name__ == '__main__':
     start_time = time.time()
-    num_games_to_play = 10 + 1 # add one more for the range function
+    num_games_to_play = 2 + 1 # add one more for the range function
 
     # !!!!!!!!!!!!!!!!! change this each time for new section of the database  !!!!!!!!!!!!!!!!!
     # chess_data = pd.read_pickle(game_settings.chess_games_filepath_part_1, compression='zip')
@@ -36,10 +36,11 @@ if __name__ == '__main__':
         
         try:
             chess_data = pd.read_pickle(file_path, compression='zip')
+            chess_data = chess_data.head(1000)
             corrupted_games = play_games(chess_data)           
             chess_data = chess_data.drop(corrupted_games)
             print(f"Part {part}: {len(corrupted_games)} corrupted games detected.")
-            chess_data.to_pickle(file_path, compression='zip')        
+            # chess_data.to_pickle(file_path, compression='zip')        
         except Exception as e:
             print(f"Error processing {file_path}: {e}")
             logger.critical(f'db cleanup interrupted because of:  {e}')
