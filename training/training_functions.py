@@ -70,6 +70,9 @@ def play_one_game(game_number, chess_data, w_agent, b_agent, environ):
             return result # return the corrupted game_number
             
         curr_state = environ.get_curr_state()
+        if curr_state['turn_index'] >= num_moves:
+            break 
+
         if environ.board.is_game_over():
             break
 

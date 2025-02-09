@@ -1,3 +1,5 @@
+#tests_clean_chess_db.py
+
 import pandas as pd
 import numpy as np
 import chess
@@ -115,20 +117,20 @@ def test_handle_agent_turn_invalid_move():
 
 def test_play_one_game_valid():
     """
-    Test play_one_game for a game that should complete normally.
-    We simulate a game with a single valid move.
+    One half-move game (White's move only).
+    Include an empty B1 column to avoid KeyError.
     """
     df = pd.DataFrame({
         'W1': ['e4'],
+        'B1': [None],        # Add this column
         'PlyCount': [1]
     }, index=['Game 1'])
     w_agent = Agent('W')
     b_agent = Agent('B')
-    # Use a real Environ instance from the environment module.
     environ = Environ()
     result = play_one_game('Game 1', df, w_agent, b_agent, environ)
-    # For a valid game, the result should be an empty string.
     assert result == ''
+
 
 def test_play_one_game_invalid():
     """
@@ -150,17 +152,14 @@ def test_play_one_game_invalid():
 # -----------------------------------------------------------------------------
 
 def test_play_games_mixed():
-    """
-    Create a small DataFrame with two games: one valid and one corrupted.
-    The valid game has a legal move, the corrupted game has an invalid move.
-    The overall play_games function should return a list containing the identifier of the corrupted game.
-    """
     df = pd.DataFrame({
-        'W1': ['e4', 'e5'],  # Game 1: valid (e4); Game 2: invalid (e5)
+        'W1': ['e4', 'e5'],
+        'B1': [None, None],     # So there's no KeyError
         'PlyCount': [1, 1]
     }, index=['Game 1', 'Game 2'])
+
     corrupted = play_games(df)
-    # Expect that Game 2 is flagged as corrupted.
     assert 'Game 2' in corrupted
     assert 'Game 1' not in corrupted
+
 

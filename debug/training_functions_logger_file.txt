@@ -1,0 +1,3 @@
+2025-02-08 18:45:48,527 - CRITICAL - Invalid move 'e5' for game Game 1, turn W1. 
+2025-02-08 18:45:48,535 - CRITICAL - Invalid move 'e5' for game Game 1, turn W1. 
+2025-02-08 18:45:49,089 - CRITICAL - Invalid move 'e5' for game Game 2, turn W1. 
