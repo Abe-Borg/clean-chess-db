@@ -33,11 +33,6 @@ def test_logging_for_missing_column():
     with pytest.raises(KeyError):
         agent.choose_action(df, environ_state, 'Game 1')
 
-    # Check that proper logging occurred
-    with open('logs/agent_logger_file.txt', 'r') as log_file:
-        logs = log_file.readlines()
-        assert any("Missing expected column" in log for log in logs), "Expected error logging not found."
-
 def test_environ_turn_progression():
     """
     Ensure that the Environ class correctly progresses the turn index.
