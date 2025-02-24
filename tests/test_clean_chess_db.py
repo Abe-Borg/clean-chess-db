@@ -127,7 +127,7 @@ def test_play_one_game_valid():
     b_agent = Agent('B')
     environ = Environ()
     result = play_one_game('Game 1', df, w_agent, b_agent, environ)
-    assert result in None
+    assert result is None
 
 
 def test_play_one_game_invalid():

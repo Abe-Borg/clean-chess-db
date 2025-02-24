@@ -1,0 +1,10 @@
+2025-02-23 18:47:02,012 - CRITICAL - Invalid move 'e5' for game Game 1, turn W1. 
+2025-02-23 18:50:37,485 - CRITICAL - Invalid move 'e5' for game Game 1, turn W1. 
+2025-02-23 18:50:37,489 - CRITICAL - Invalid move 'e5' for game Game 1, turn W1. 
+2025-02-23 18:50:37,965 - CRITICAL - Invalid move 'e5' for game Game 2, turn W1. 
+2025-02-23 18:53:32,119 - CRITICAL - Invalid move 'e5' for game Game 1, turn W1. 
+2025-02-23 18:53:32,124 - CRITICAL - Invalid move 'e5' for game Game 1, turn W1. 
+2025-02-23 18:53:32,602 - CRITICAL - Invalid move 'e5' for game Game 2, turn W1. 
+2025-02-23 18:57:38,157 - CRITICAL - Invalid move 'e5' for game Game 1, turn W1. 
+2025-02-23 18:57:38,163 - CRITICAL - Invalid move 'e5' for game Game 1, turn W1. 
+2025-02-23 18:57:38,670 - CRITICAL - Invalid move 'e5' for game Game 2, turn W1. 
