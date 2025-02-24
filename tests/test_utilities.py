@@ -1,7 +1,10 @@
+# test_utilities.py
 import pytest
 import chess
 import pandas as pd
-
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from training.game_simulation import chunkify, apply_move_and_update_state
 from environment.Environ import Environ
 from agents.Agent import Agent
