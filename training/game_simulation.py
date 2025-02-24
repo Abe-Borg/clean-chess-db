@@ -8,7 +8,6 @@ from environment.Environ import Environ
 from multiprocessing import Pool, cpu_count
 import logging
 
-# Set up file-based logging (critical items only)
 logger = logging.getLogger("game_simulation.py")
 logger.setLevel(logging.CRITICAL)
 if not logger.handlers:
@@ -18,11 +17,11 @@ if not logger.handlers:
     fh.setFormatter(formatter)
     logger.addHandler(fh)
 
-def play_games(chess_data):
+def play_games(chess_data: pd.DataFrame) -> List[str]:
     game_indices = list(chess_data.index)
     return process_games_in_parallel(game_indices, worker_play_games, chess_data)
 
-def process_games_in_parallel(game_indices: List[str], worker_function: Callable[..., List], *args) -> List:
+def process_games_in_parallel(game_indices: List[str], worker_function: Callable[..., List], *args) -> List[str]:
     num_processes = min(cpu_count(), len(game_indices))
     chunks = chunkify(game_indices, num_processes)
     
@@ -32,81 +31,69 @@ def process_games_in_parallel(game_indices: List[str], worker_function: Callable
     corrupted_games_list = [game for sublist in results for game in sublist]
     return corrupted_games_list
 
-def worker_play_games(game_indices_chunk, chess_data):
+def worker_play_games(game_indices_chunk: List[str], chess_data: pd.DataFrame) -> List[str]:
     corrupted_games = []
     w_agent = Agent('W')
     b_agent = Agent('B')
     environ = Environ()
 
     for game_number in game_indices_chunk:
-        result = play_one_game(game_number, chess_data, w_agent, b_agent, environ)
-        # If a corrupted game is detected, 'result' is not an empty list.
-        if result != '':
+        try:
+            result = play_one_game(game_number, chess_data, w_agent, b_agent, environ)
+        except Exception as e:
+            logger.critical(f"Exception processing game {game_number}: {e}")
+            result = game_number  # flag as corrupted
+
+        if result is not None:
             corrupted_games.append(game_number)
 
         environ.reset_environ()
     return corrupted_games
 
 
-def play_one_game(game_number, chess_data, w_agent, b_agent, environ):
+def play_one_game(game_number: str, chess_data: pd.DataFrame, w_agent: Agent, b_agent: Agent, environ: Environ) -> str:
     num_moves = chess_data.at[game_number, 'PlyCount']
-    curr_state = environ.get_curr_state()
-
-    while curr_state['turn_index'] < num_moves:
-        if environ.board.is_game_over():
-            break
-
-        # result will be '' if game ended normally, otherwise it will be the game_number
-        result = handle_agent_turn(
-            agent=w_agent,
-            chess_data=chess_data,
-            curr_state=curr_state,
-            game_number=game_number,
-            environ=environ,
-        )
-
-        # if the result is not '', it means the game ended due to an invalid move
-        if result != '': 
-            return result # return the corrupted game_number
-            
+    # Loop until we reach the number of moves or the game is over.
+    while True:
         curr_state = environ.get_curr_state()
         if curr_state['turn_index'] >= num_moves:
-            break 
-
+            break
         if environ.board.is_game_over():
             break
 
-        result = handle_agent_turn(
-            agent=b_agent,
-            chess_data=chess_data,
-            curr_state=curr_state,
-            game_number=game_number,
-            environ=environ,
-        )
-
-        if result != '': 
-            return result # return the corrupted game_number
+        result = handle_agent_turn(w_agent, chess_data, curr_state, game_number, environ)
+        if result is not None:
+            return result  # Return the game_number for a corrupted game
 
         curr_state = environ.get_curr_state()
+        if curr_state['turn_index'] >= num_moves:
+            break
         if environ.board.is_game_over():
-            break 
+            break
+
+        result = handle_agent_turn(b_agent, chess_data, curr_state, game_number, environ)
+        if result is not None:
+            return result  # Return the game_number for a corrupted game
+
+        if environ.board.is_game_over():
+            break
             
-    return '' # return '' if the game ended normally
+    return None  # Game processed normally
 
 
-def handle_agent_turn(agent, chess_data, curr_state, game_number, environ) -> str:
+def handle_agent_turn(agent: Agent, chess_data: pd.DataFrame, curr_state: dict, game_number: str, environ: Environ) -> str:
     curr_turn = curr_state['curr_turn']    
     chess_move = agent.choose_action(chess_data, curr_state, game_number)
 
     if chess_move == '' or pd.isna(chess_move):
-        return ''
+        return None
     
     if chess_move not in environ.get_legal_moves():
         logger.critical(f"Invalid move '{chess_move}' for game {game_number}, turn {curr_turn}. ")
         return game_number
     
     apply_move_and_update_state(chess_move, environ)
-    return ''
+    return None
 
 def apply_move_and_update_state(chess_move: str, environ) -> None:
     environ.board.push_san(chess_move)

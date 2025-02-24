@@ -10,14 +10,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import the modules under test.
 from agents.Agent import Agent
-from training.game_simulation.py import (
+from training.game_simulation import (
     handle_agent_turn,
     play_one_game,
     play_games,
 )
 from environment.Environ import Environ
-
-
 from utils import game_settings
 
 
@@ -92,7 +90,7 @@ def test_handle_agent_turn_valid():
     dummy_environ = DummyEnviron()
     result = handle_agent_turn(agent, df, environ_state, 'Game 1', dummy_environ)
     # Expected: valid move, so result should be empty.
-    assert result == ''
+    assert result is None
 
 def test_handle_agent_turn_invalid_move():
     """
@@ -129,7 +127,7 @@ def test_play_one_game_valid():
     b_agent = Agent('B')
     environ = Environ()
     result = play_one_game('Game 1', df, w_agent, b_agent, environ)
-    assert result == ''
+    assert result in None
 
 
 def test_play_one_game_invalid():
