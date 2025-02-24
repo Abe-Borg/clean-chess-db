@@ -9,7 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import traceback
 from utils import game_settings
 import logging
-from training.training_functions import play_games
+from training.game_simulation.py import play_games
 
 
 logger = logging.getLogger("play_games")

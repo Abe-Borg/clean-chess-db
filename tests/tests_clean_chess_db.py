@@ -10,7 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import the modules under test.
 from agents.Agent import Agent
-from training.training_functions import (
+from training.game_simulation.py import (
     handle_agent_turn,
     play_one_game,
     play_games,

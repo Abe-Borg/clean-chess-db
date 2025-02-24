@@ -12,7 +12,7 @@ PRINT_STEP_BY_STEP = False
 helper_methods_logger_filepath = base_directory / ".." / "debug" / "helper_methods_logger_file.txt"
 agent_logger_filepath = base_directory / ".." / "debug" / "agent_logger_file.txt"
 environ_logger_filepath = base_directory / ".." / "debug" / "environ_logger_file.txt"
-training_functions_logger_filepath = base_directory / ".." / "debug" / "training_functions_logger_file.txt"
+game_simulation_logger_filepath = base_directory / ".." / "debug" / "game_simulation.py_logger_file.txt"
 play_games_logger_filepath = base_directory / ".." / "debug" / "play_games_logger_file.txt"
 
 chess_games_filepath_part_1 = base_directory / ".." / "chess_data" / "chess_games_part_1.pkl"

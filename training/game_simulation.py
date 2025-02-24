@@ -1,4 +1,4 @@
-# training_functions.py
+# game_simulation.py.py
 
 from typing import Callable, List
 import pandas as pd
@@ -9,10 +9,10 @@ from multiprocessing import Pool, cpu_count
 import logging
 
 # Set up file-based logging (critical items only)
-logger = logging.getLogger("training_functions")
+logger = logging.getLogger("game_simulation.py")
 logger.setLevel(logging.CRITICAL)
 if not logger.handlers:
-    fh = logging.FileHandler(str(game_settings.training_functions_logger_filepath))
+    fh = logging.FileHandler(str(game_settings.game_simulation.py_logger_filepath))
     fh.setLevel(logging.CRITICAL)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     fh.setFormatter(formatter)

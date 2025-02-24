@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 import pandas as pd
-from training.training_functions import play_games
+from training.game_simulation.py import play_games
 
 def test_play_games_performance(benchmark):
     # Create a synthetic DataFrame with a large number of valid games.
