@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger("game_simulation.py")
 logger.setLevel(logging.CRITICAL)
 if not logger.handlers:
-    fh = logging.FileHandler(str(game_settings.game_simulation.py_logger_filepath))
+    fh = logging.FileHandler(str(game_settings.game_simulation_logger_filepath))
     fh.setLevel(logging.CRITICAL)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     fh.setFormatter(formatter)
@@ -50,7 +50,6 @@ def worker_play_games(game_indices_chunk: List[str], chess_data: pd.DataFrame) -
         environ.reset_environ()
     return corrupted_games
 
-
 def play_one_game(game_number: str, chess_data: pd.DataFrame, w_agent: Agent, b_agent: Agent, environ: Environ) -> str:
     num_moves = chess_data.at[game_number, 'PlyCount']
     # Loop until we reach the number of moves or the game is over.
@@ -79,7 +78,6 @@ def play_one_game(game_number: str, chess_data: pd.DataFrame, w_agent: Agent, b_
             break
             
     return None  # Game processed normally
-
 
 def handle_agent_turn(agent: Agent, chess_data: pd.DataFrame, curr_state: dict, game_number: str, environ: Environ) -> str:
     curr_turn = curr_state['curr_turn']    
