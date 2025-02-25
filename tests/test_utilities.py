@@ -1,4 +1,4 @@
-# test_utilities.py
+# tests/test_utilities.py
 import pytest
 import chess
 import pandas as pd

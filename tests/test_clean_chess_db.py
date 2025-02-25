@@ -1,4 +1,4 @@
-# test_clean_chess_db.py
+# file tests/test_clean_chess_db.py
 
 import pandas as pd
 import numpy as np
