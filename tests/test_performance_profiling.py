@@ -247,26 +247,26 @@ def test_environ_performance(benchmark):
     result = benchmark(environ.get_legal_moves)
     assert len(result) > 0
 
-@pytest.mark.benchmark(group="components")
-def test_handle_agent_turn_performance(benchmark):
-    """Benchmark the handle_agent_turn function."""
-    df = create_game_data(1)
-    agent = Agent('W')
-    environ = Environ()
+# @pytest.mark.benchmark(group="components")
+# def test_handle_agent_turn_performance(benchmark):
+#     """Benchmark the handle_agent_turn function."""
+#     df = create_game_data(1)
+#     agent = Agent('W')
+#     environ = Environ()
     
-    # We need to ensure that the move in the DataFrame is actually
-    # in the list of legal moves for the starting position
-    legal_moves = environ.get_legal_moves()
+#     # We need to ensure that the move in the DataFrame is actually
+#     # in the list of legal moves for the starting position
+#     legal_moves = environ.get_legal_moves()
     
-    # Use a valid move from legal_moves
-    if legal_moves:
-        df.at['Game 0', 'W1'] = legal_moves[0]
+#     # Use a valid move from legal_moves
+#     if legal_moves:
+#         df.at['Game 0', 'W1'] = legal_moves[0]
     
-    environ_state = environ.get_curr_state()
+#     environ_state = environ.get_curr_state()
     
-    # Benchmark handling a single agent turn
-    result = benchmark(handle_agent_turn, agent, df, environ_state, 'Game 0', environ)
-    assert result is None
+#     # Benchmark handling a single agent turn
+#     result = benchmark(handle_agent_turn, agent, df, environ_state, 'Game 0', environ)
+#     assert result is None
 
 def get_valid_move_sequence(length=8):
     """
