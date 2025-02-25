@@ -3,3 +3,4 @@ venv/
 *.pyc
 src/__pycache__/ 
 *.ipynb
+temp/
