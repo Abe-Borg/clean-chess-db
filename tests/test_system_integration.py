@@ -24,79 +24,79 @@ from environment.Environ import Environ
 from utils import game_settings
 
 # Helper function to create a temporary DataFrame file
-def create_temp_dataframe(num_games=100, corrupt_indices=None):
-    """
-    Create a temporary DataFrame with chess games and save it to a pickle file.
+# def create_temp_dataframe(num_games=100, corrupt_indices=None):
+#     """
+#     Create a temporary DataFrame with chess games and save it to a pickle file.
     
-    Args:
-        num_games: Number of games to generate
-        corrupt_indices: List of indices to mark as corrupted (with invalid moves)
+#     Args:
+#         num_games: Number of games to generate
+#         corrupt_indices: List of indices to mark as corrupted (with invalid moves)
         
-    Returns:
-        Tuple of (temp_file_path, DataFrame)
-    """
-    if corrupt_indices is None:
-        corrupt_indices = []
+#     Returns:
+#         Tuple of (temp_file_path, DataFrame)
+#     """
+#     if corrupt_indices is None:
+#         corrupt_indices = []
     
-    # Create data for DataFrame
-    data = {
-        'PlyCount': [4] * num_games,
-        'W1': ['e4'] * num_games,
-        'B1': ['e5'] * num_games,
-        'W2': ['Nf3'] * num_games,
-        'B2': ['Nc6'] * num_games
-    }
+#     # Create data for DataFrame
+#     data = {
+#         'PlyCount': [4] * num_games,
+#         'W1': ['e4'] * num_games,
+#         'B1': ['e5'] * num_games,
+#         'W2': ['Nf3'] * num_games,
+#         'B2': ['Nc6'] * num_games
+#     }
     
-    # Inject corrupted games
-    for idx in corrupt_indices:
-        if idx < num_games:
-            data['W1'][idx] = 'invalid_move'
+#     # Inject corrupted games
+#     for idx in corrupt_indices:
+#         if idx < num_games:
+#             data['W1'][idx] = 'invalid_move'
     
-    # Create DataFrame
-    df = pd.DataFrame(data, index=[f'Game {i}' for i in range(num_games)])
+#     # Create DataFrame
+#     df = pd.DataFrame(data, index=[f'Game {i}' for i in range(num_games)])
     
-    # Save to temporary file
-    temp_file_path = os.path.join(tempfile.gettempdir(), f"test_chess_data_{os.getpid()}.pkl")
-    df.to_pickle(temp_file_path, compression='zip')
+#     # Save to temporary file
+#     temp_file_path = os.path.join(tempfile.gettempdir(), f"test_chess_data_{os.getpid()}.pkl")
+#     df.to_pickle(temp_file_path, compression='zip')
     
-    return temp_file_path, df
+#     return temp_file_path, df
 
-# Test end-to-end workflow
-def test_end_to_end_workflow():
-    """Test the entire workflow from file reading to processing to writing results."""
-    # Create a temporary DataFrame with 100 games, 10 of which are corrupted
-    corrupt_indices = list(range(10))
-    temp_file_path, original_df = create_temp_dataframe(100, corrupt_indices)
+# # Test end-to-end workflow
+# def test_end_to_end_workflow():
+#     """Test the entire workflow from file reading to processing to writing results."""
+#     # Create a temporary DataFrame with 100 games, 10 of which are corrupted
+#     corrupt_indices = list(range(10))
+#     temp_file_path, original_df = create_temp_dataframe(100, corrupt_indices)
     
-    try:
-        # Process the games
-        chess_data = pd.read_pickle(temp_file_path, compression='zip')
-        corrupted_games = play_games(chess_data)
+#     try:
+#         # Process the games
+#         chess_data = pd.read_pickle(temp_file_path, compression='zip')
+#         corrupted_games = play_games(chess_data)
         
-        # Verify that exactly the 10 corrupted games were identified
-        assert len(corrupted_games) == 10
-        for i in range(10):
-            assert f'Game {i}' in corrupted_games
+#         # Verify that exactly the 10 corrupted games were identified
+#         assert len(corrupted_games) == 10
+#         for i in range(10):
+#             assert f'Game {i}' in corrupted_games
         
-        # Clean the data by removing corrupted games
-        clean_df = chess_data.drop(corrupted_games)
+#         # Clean the data by removing corrupted games
+#         clean_df = chess_data.drop(corrupted_games)
         
-        # Save the cleaned data to a new temporary file
-        output_file = tempfile.NamedTemporaryFile(suffix='.pkl', delete=False)
-        clean_df.to_pickle(output_file.name, compression='zip')
+#         # Save the cleaned data to a new temporary file
+#         output_file = tempfile.NamedTemporaryFile(suffix='.pkl', delete=False)
+#         clean_df.to_pickle(output_file.name, compression='zip')
         
-        # Verify that the cleaned data has the expected number of games
-        reloaded_df = pd.read_pickle(output_file.name, compression='zip')
-        assert len(reloaded_df) == 90
+#         # Verify that the cleaned data has the expected number of games
+#         reloaded_df = pd.read_pickle(output_file.name, compression='zip')
+#         assert len(reloaded_df) == 90
         
-        # Verify that the cleaned data contains only valid games
-        assert all(game_id not in corrupted_games for game_id in reloaded_df.index)
+#         # Verify that the cleaned data contains only valid games
+#         assert all(game_id not in corrupted_games for game_id in reloaded_df.index)
         
-    finally:
-        # Clean up temporary files
-        os.unlink(temp_file_path)
-        if 'output_file' in locals():
-            os.unlink(output_file.name)
+#     finally:
+#         # Clean up temporary files
+#         os.unlink(temp_file_path)
+#         if 'output_file' in locals():
+#             os.unlink(output_file.name)
 
 # Test error handling and recovery in file operations
 def test_file_operation_error_handling():

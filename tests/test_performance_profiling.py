@@ -8,6 +8,7 @@ These tests focus on:
 4. Scaling tests
 """
 
+import logging
 import sys
 import os
 import time
@@ -28,6 +29,28 @@ from agents.Agent import Agent
 from environment.Environ import Environ
 from utils import constants
 
+# Add this at the top of your test_performance_profiling.py file after the imports
+
+# Configure logging to prevent console output during tests
+def configure_silent_logging():
+    root_logger = logging.getLogger()
+    # Remove all handlers
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+    
+    # Set up null handler to suppress output
+    null_handler = logging.NullHandler()
+    root_logger.addHandler(null_handler)
+    
+    # Also configure the game_simulation logger specifically
+    game_logger = logging.getLogger("game_simulation.py")
+    for handler in game_logger.handlers[:]:
+        game_logger.removeHandler(handler)
+    game_logger.addHandler(null_handler)
+
+# Run the configuration
+configure_silent_logging()
+
 # Helper function to create synthetic game data
 def create_game_data(num_games, move_count=4, corrupt_percentage=0):
     """Create synthetic game data for performance testing.
@@ -40,17 +63,26 @@ def create_game_data(num_games, move_count=4, corrupt_percentage=0):
     Returns:
         DataFrame with synthetic game data
     """
-    # Standard opening sequence
-    valid_moves = ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6']
+    # Get a valid sequence of moves
+    valid_moves = get_valid_move_sequence(length=min(32, move_count))
+    
+    # If we need more moves than available, repeat the sequence
+    while len(valid_moves) < move_count:
+        valid_moves.extend(valid_moves[:min(8, move_count - len(valid_moves))])
     
     # Create DataFrame columns
     data = {'PlyCount': [move_count] * num_games}
     
     # Add move columns for each ply
-    for i in range(1, (move_count // 2) + 1):
-        if i * 2 <= len(valid_moves):
-            data[f'W{i}'] = [valid_moves[(i-1)*2]] * num_games
-            data[f'B{i}'] = [valid_moves[(i-1)*2 + 1]] * num_games
+    for i in range(1, (move_count // 2) + 2):  # +2 to ensure we cover odd numbers of moves
+        white_move_idx = (i-1) * 2
+        black_move_idx = white_move_idx + 1
+        
+        if white_move_idx < len(valid_moves):
+            data[f'W{i}'] = [valid_moves[white_move_idx]] * num_games
+        
+        if black_move_idx < len(valid_moves):
+            data[f'B{i}'] = [valid_moves[black_move_idx]] * num_games
     
     # Convert to DataFrame
     df = pd.DataFrame(data, index=[f'Game {i}' for i in range(num_games)])
@@ -153,7 +185,16 @@ def test_detailed_profiling():
 @memory_profile
 def test_memory_usage_individual_game():
     """Profile memory usage for processing individual games."""
-    df = create_game_data(1, move_count=16)  # One game with 16 moves
+    # Create a game with more moves but ensure all columns exist
+    move_count = 16
+    df = create_game_data(1, move_count=move_count)
+    
+    # Verify that all required columns exist
+    for i in range(1, (move_count // 2) + 1):
+        if f'W{i}' not in df.columns:
+            df[f'W{i}'] = 'e4'  # Add default move if missing
+        if f'B{i}' not in df.columns:
+            df[f'B{i}'] = 'e5'  # Add default move if missing
     
     w_agent = Agent('W')
     b_agent = Agent('B')
@@ -212,8 +253,51 @@ def test_handle_agent_turn_performance(benchmark):
     df = create_game_data(1)
     agent = Agent('W')
     environ = Environ()
+    
+    # We need to ensure that the move in the DataFrame is actually
+    # in the list of legal moves for the starting position
+    legal_moves = environ.get_legal_moves()
+    
+    # Use a valid move from legal_moves
+    if legal_moves:
+        df.at['Game 0', 'W1'] = legal_moves[0]
+    
     environ_state = environ.get_curr_state()
     
     # Benchmark handling a single agent turn
     result = benchmark(handle_agent_turn, agent, df, environ_state, 'Game 0', environ)
     assert result is None
+
+def get_valid_move_sequence(length=8):
+    """
+    Generate a valid sequence of chess moves from the starting position.
+    
+    Args:
+        length: Number of half-moves to generate
+        
+    Returns:
+        List of valid moves in Standard Algebraic Notation
+    """
+    # Some known valid opening sequences
+    openings = [
+        # Ruy Lopez
+        ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 
+         'O-O', 'Be7', 'Re1', 'b5', 'Bb3', 'O-O', 'd4', 'exd4'],
+        # Italian Game
+        ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5', 'd3', 'Nf6',
+         'O-O', 'd6', 'c3', 'a6', 'Re1', 'Ba7', 'Nbd2', 'O-O'],
+        # Sicilian Defense
+        ['e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Nxd4', 'Nf6',
+         'Nc3', 'a6', 'Be2', 'e6', 'O-O', 'Be7', 'f4', 'O-O'],
+        # Queen's Gambit Accepted
+        ['d4', 'd5', 'c4', 'dxc4', 'e3', 'e6', 'Bxc4', 'Nf6',
+         'Nf3', 'c5', 'O-O', 'a6', 'e4', 'b5', 'Bd3', 'Bb7'],
+    ]
+    
+    # Pick a random opening
+    import random
+    opening = random.choice(openings)
+    
+    # Return the requested number of moves (or all if length > len(opening))
+    return opening[:min(length, len(opening))] 
+
