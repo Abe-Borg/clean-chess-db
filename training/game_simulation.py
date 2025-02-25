@@ -18,12 +18,54 @@ if not logger.handlers:
     logger.addHandler(fh)
 
 def play_games(chess_data: pd.DataFrame) -> List[str]:
+    """Process all games in the provided DataFrame.
+    
+    Args:
+        chess_data: DataFrame containing chess games
+        
+    Returns:
+        List of corrupted game identifiers
+    """
+    # Handle empty DataFrame
+    if chess_data.empty:
+        return []
+    
+    # Check that required columns exist
+    required_columns = ['PlyCount']
+    missing_columns = [col for col in required_columns if col not in chess_data.columns]
+    if missing_columns:
+        logger.critical(f"Missing required columns: {missing_columns}")
+        # Return all game indices as corrupted if required columns are missing
+        return list(chess_data.index)
+    
     game_indices = list(chess_data.index)
     return process_games_in_parallel(game_indices, worker_play_games, chess_data)
 
 def process_games_in_parallel(game_indices: List[str], worker_function: Callable[..., List], *args) -> List[str]:
-    num_processes = min(cpu_count(), len(game_indices))
+    """Process games in parallel using multiprocessing.
+    
+    Args:
+        game_indices: List of game identifiers to process
+        worker_function: Function to process each chunk of games
+        *args: Additional arguments to pass to the worker function
+        
+    Returns:
+        List of corrupted game identifiers
+    """
+    # Handle the case when there are no games
+    if not game_indices:
+        return []
+    
+    # Get available CPU count and ensure it's at least 1
+    num_processes = max(1, min(cpu_count(), len(game_indices)))
     chunks = chunkify(game_indices, num_processes)
+    
+    # If chunking resulted in empty list, return empty result
+    if not chunks:
+        return []
+    
+    # Use a smaller number of processes if we have fewer chunks
+    num_processes = min(num_processes, len(chunks))
     
     with Pool(processes=num_processes) as pool:
         results = pool.starmap(worker_function, [(chunk, *args) for chunk in chunks])
@@ -98,6 +140,22 @@ def apply_move_and_update_state(chess_move: str, environ) -> None:
     environ.update_curr_state()
 
 def chunkify(lst, n):
+    """Split a list into n chunks as evenly as possible.
+    
+    Args:
+        lst: The list to split
+        n: The number of chunks to create
+        
+    Returns:
+        A list of chunks
+    """
+    # Handle edge cases
+    if not lst:
+        return []
+    
+    if n <= 0:
+        return [lst] if lst else []  # Return the whole list as a single chunk or empty list
+    
     size = len(lst) // n
     remainder = len(lst) % n
     chunks = []
@@ -105,10 +163,8 @@ def chunkify(lst, n):
     
     for i in range(n):
         end = start + size + (1 if i < remainder else 0)
-        chunks.append(lst[start:end])
+        if start < len(lst):  # Only add non-empty chunks
+            chunks.append(lst[start:end])
         start = end
         
     return chunks
-
-
-
