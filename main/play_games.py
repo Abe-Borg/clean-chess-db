@@ -34,7 +34,7 @@ if __name__ == '__main__':
         
         try:
             chess_data = pd.read_pickle(file_path, compression='zip')
-            print(f"Part {part}: {len(chess_data)} games in dataframe.")
+            print(f"\nPart {part}: {len(chess_data)} games in dataframe.")
             corrupted_games = play_games(chess_data)           
             print(f"Part {part}: {len(corrupted_games)} corrupted games detected.")
             # chess_data = chess_data.drop(corrupted_games)
