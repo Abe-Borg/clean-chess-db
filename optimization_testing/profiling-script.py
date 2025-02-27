@@ -9,7 +9,7 @@ import psutil
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from training.game_simulation import play_games
+from training.optimized_game_simulation import play_games
 from io import StringIO
 import sys
 
@@ -108,6 +108,6 @@ if __name__ == "__main__":
         # Default file path - adjust as needed
         from utils import game_settings
         filepath = game_settings.chess_games_filepath_part_1
-        sample_size = 1000  # Use a small sample for quick profiling
+        sample_size = 10000  
     
     run_profiling(filepath, sample_size)

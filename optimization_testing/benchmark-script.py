@@ -159,8 +159,8 @@ if __name__ == "__main__":
     print(f"Loaded {len(df)} games, average {df['PlyCount'].mean():.2f} moves per game")
     
     # Define sample sizes
-    max_size = min(2000, len(df))  # Limit maximum sample size
-    sample_sizes = [100, 500, max_size]
+    max_size = min(10000, len(df))  # Limit maximum sample size
+    sample_sizes = [100, 500, 2000, 5000, max_size]
     
     # Run benchmarks
     results = run_benchmark(df, sample_sizes)
