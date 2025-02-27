@@ -1,12 +1,10 @@
-# optimized_environ.py
+# file: environment/Environ.py
 
 import chess
 from utils import constants
 from typing import Union, Dict, List
 
 class Environ:
-    """Optimized environment class for chess game simulation."""
-    
     # Class variable for turn list to avoid recreating it for each instance
     _turn_list = None
     

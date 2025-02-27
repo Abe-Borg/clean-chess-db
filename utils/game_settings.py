@@ -1,4 +1,4 @@
-# game_settings.py
+# utils/game_settings.py
 import pandas as pd
 from pathlib import Path
 

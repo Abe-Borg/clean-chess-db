@@ -1,4 +1,4 @@
-# optimized_game_simulation.py
+# file: training/game_simulation.py
 
 from typing import Callable, List, Dict, Any
 import pandas as pd

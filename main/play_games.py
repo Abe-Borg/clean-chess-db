@@ -1,4 +1,4 @@
-# play_games.py
+# file: main/play_games.py
 
 import numpy as np
 import pandas as pd

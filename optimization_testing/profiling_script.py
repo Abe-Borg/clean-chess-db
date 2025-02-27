@@ -1,4 +1,4 @@
-# profile_chess.py
+# file: optimization_testing/profiling_script.py
 
 import cProfile
 import pstats
