@@ -7,6 +7,8 @@ import time
 import platform
 import psutil
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from training.game_simulation import play_games
 from io import StringIO
 import sys

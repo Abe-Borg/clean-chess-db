@@ -1,5 +1,8 @@
 # fully_optimized.py
 
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from typing import Callable, List, Dict, Any, Optional, Union
 import pandas as pd
 import chess
@@ -7,7 +10,6 @@ from utils import game_settings, constants
 from multiprocessing import Pool, cpu_count, shared_memory
 import logging
 import numpy as np
-import os
 import time
 
 logger = logging.getLogger("fully_optimized")
