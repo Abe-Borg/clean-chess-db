@@ -1,31 +1,32 @@
-# benchmark.py
+# benchmark-script.py
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import time
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-import sys
 import platform
 import psutil
 from multiprocessing import Pool, cpu_count
-from contextlib import contextmanager
 
-# Import both original and optimized implementations
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from training.game_simulation import play_games as original_play_games
-# Assuming optimized implementations are in a module called 'optimized'
-# Adjust paths as needed
-from optimized.optimized_game_simulation import play_games as optimized_play_games
+from training.optimized_game_simulation import play_games as optimized_play_games
 
-@contextmanager
-def timer(description):
-    """Context manager for timing blocks of code."""
-    start = time.time()
-    yield
-    elapsed = time.time() - start
-    print(f"{description}: {elapsed:.3f} seconds")
-    return elapsed
+class Timer:
+    """Timer class for measuring execution time"""
+    def __init__(self, description):
+        self.description = description
+        self.elapsed = 0
+        
+    def __enter__(self):
+        self.start = time.time()
+        return self
+        
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.elapsed = time.time() - self.start
+        print(f"{self.description}: {self.elapsed:.3f} seconds")
 
 def get_system_info():
     """Get system information for benchmarking context."""
@@ -78,14 +79,14 @@ def run_benchmark(df, sample_sizes=None, runs_per_sample=3):
             print(f"\nRun {i+1}/{runs_per_sample}:")
             
             # Time original implementation
-            with timer("Original implementation") as t_orig:
+            with Timer("Original implementation") as t:
                 original_play_games(sample_df)
-            original_times.append(t_orig)
+            original_times.append(t.elapsed)
             
             # Time optimized implementation
-            with timer("Optimized implementation") as t_opt:
+            with Timer("Optimized implementation") as t:
                 optimized_play_games(sample_df)
-            optimized_times.append(t_opt)
+            optimized_times.append(t.elapsed)
         
         # Calculate average times
         avg_original = sum(original_times) / len(original_times)

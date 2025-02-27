@@ -1,8 +1,7 @@
 # optimized_agent.py
-import logging
 from typing import Union, Dict, List, Any
 
-class OptimizedAgent:
+class Agent:
     def __init__(self, color: str):
         self.color = color
       

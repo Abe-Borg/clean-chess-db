@@ -4,7 +4,7 @@ import chess
 from utils import constants
 from typing import Union, Dict, List
 
-class OptimizedEnviron:
+class Environ:
     """Optimized environment class for chess game simulation."""
     
     # Class variable for turn list to avoid recreating it for each instance

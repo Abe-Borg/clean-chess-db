@@ -2,9 +2,9 @@
 
 from typing import Callable, List, Dict, Any
 import pandas as pd
-from agents.Agent import Agent
+from agents.optimized_agent import Agent
 from utils import game_settings
-from environment.Environ import Environ
+from environment.optimized_environ import Environ
 from multiprocessing import Pool, cpu_count
 import logging
 
