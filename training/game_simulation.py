@@ -93,7 +93,7 @@ def worker_play_games(game_indices_chunk: List[str], chess_data: pd.DataFrame) -
         game_row = chess_data.loc[game_number]
         games_data[game_number] = {
             'PlyCount': game_row['PlyCount'],
-            'moves': {col: game_row[col] for col in game_row.index if col != 'PlyCount'}
+            'moves': {col: game_row[col] for col in game_row.index if col != 'PlyCount' and col != 'Result'}
         }
 
     for game_number in game_indices_chunk:
