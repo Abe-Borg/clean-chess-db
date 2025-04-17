@@ -17,6 +17,7 @@ import time
 from training.game_simulation import play_games
 from utils import game_settings
 from environment.Environ import Environ
+from profiling_utils import get_system_info
 
 # Define worker initialization function
 def init_worker(i):
@@ -43,18 +44,6 @@ class Timer:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.elapsed = time.time() - self.start
         print(f"{self.description}: {self.elapsed:.3f} seconds")
-
-def get_system_info():
-    """Get system information for benchmarking context."""
-    info = {
-        "platform": platform.platform(),
-        "processor": platform.processor(),
-        "python_version": platform.python_version(),
-        "cpu_count": psutil.cpu_count(logical=False),
-        "logical_cpus": psutil.cpu_count(logical=True),
-        "memory_total": psutil.virtual_memory().total / (1024**3),  # GB
-    }
-    return info
 
 def print_system_info():
     """Print system information."""

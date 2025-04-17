@@ -1,39 +1,12 @@
-# Add this as a new file: optimization_testing/visualization.py
+# file: optimization_testing/visualization.py
 
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 import pandas as pd
-from matplotlib.gridspec import GridSpec
-from matplotlib.ticker import PercentFormatter
-import os
-import time
 from datetime import datetime
 import matplotlib.dates as mdates
 from profiling_utils import analyze_and_suggest_improvements
-
-# Set up styling for all visualizations
-def setup_visualization_style():
-    """Set up consistent styling for all visualizations"""
-    sns.set(style="whitegrid", font_scale=1.1)
-    plt.rcParams['figure.figsize'] = (12, 8)
-    plt.rcParams['axes.grid'] = True
-    plt.rcParams['grid.alpha'] = 0.3
-    plt.rcParams['axes.labelpad'] = 10
-    plt.rcParams['figure.titlesize'] = 16
-    
-    # Use a color palette that is colorblind-friendly
-    sns.set_palette("colorblind")
-
-# Create a directory to store all visualizations
-def create_visualization_dir(base_dir='profiling_visualizations'):
-    """Create a timestamped directory for visualization outputs"""
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    dir_name = f"{base_dir}_{timestamp}"
-    
-    os.makedirs(dir_name, exist_ok=True)
-    return dir_name
-
+                             
 # Generate an interactive HTML dashboard
 def generate_html_dashboard(results, output_file='profiling_dashboard.html'):
     """

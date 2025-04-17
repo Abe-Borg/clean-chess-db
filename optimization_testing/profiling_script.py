@@ -17,16 +17,14 @@ from training.game_simulation import play_games
 from environment.Environ import Environ
 from io import StringIO
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
-from matplotlib.ticker import PercentFormatter
-from collections import defaultdict, Counter
 import random
 import argparse
 from utils import game_settings
 
 # Import visualization module
-from profiling_utils import (setup_visualization_style, create_visualization_dir, add_visualization_options)
+from profiling_utils import (get_system_info, setup_visualization_style, create_visualization_dir, 
+                             add_visualization_options, analyze_and_suggest_improvements)
 from visualization import (
                             generate_html_dashboard, create_performance_history_dashboard,
                             record_performance_history, create_pdf_report)
@@ -531,18 +529,6 @@ def warm_up_workers(pool, num_workers):
     for result in results:
         print(result)
 
-def get_system_info():
-    """Get system information for benchmarking context"""
-    info = {
-        "platform": platform.platform(),
-        "processor": platform.processor(),
-        "python_version": platform.python_version(),
-        "cpu_count": psutil.cpu_count(logical=False),
-        "logical_cpus": psutil.cpu_count(logical=True),
-        "memory_total": psutil.virtual_memory().total / (1024**3),  # GB
-    }
-    return info
-
 def profile_dataframe_processing(df, num_runs=1):
     """Profile the performance of processing a dataframe"""
     # Get DataFrame statistics
@@ -764,7 +750,6 @@ def run_profiling(filepath, sample_size=None, profile_run=True):
         
         return results
     
-
 def track_memory_usage(stop_event, memory_data, interval=0.5):
     """Thread function to track memory usage over time"""
     start_time = time.time()
@@ -792,7 +777,6 @@ def track_memory_usage(stop_event, memory_data, interval=0.5):
                 memory_data['gc_events'].append(current_time)
         
         time.sleep(interval)
-
 
 def monitor_worker_performance(games_df, chunk_size=100):
     """
@@ -935,7 +919,6 @@ def play_games_chunk(game_chunk):
     corrupted_games = play_games(game_chunk, None)  # None = no pool, local execution
     return corrupted_games
 
-
 # Add a new function to run profiling with detailed worker tracking
 def run_profiling_with_worker_tracking(filepath, sample_size=None, chunk_size=100):
     """Run profiling with detailed worker performance tracking"""
@@ -1010,8 +993,6 @@ def run_profiling_with_worker_tracking(filepath, sample_size=None, chunk_size=10
     create_performance_dashboard(results, 'worker_performance_dashboard.png')
     
     return results
-
-
 
 def analyze_game_level_performance(games_df, sample_size=None):
     """
@@ -1117,7 +1098,6 @@ def analyze_game_level_performance(games_df, sample_size=None):
     create_game_level_visualizations(game_metrics)
     
     return game_metrics
-
 
 def create_game_level_visualizations(metrics, output_prefix='game_level'):
     """Create visualizations for game-level performance metrics"""

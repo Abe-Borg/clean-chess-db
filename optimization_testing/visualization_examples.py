@@ -1,7 +1,6 @@
 # Example script to demonstrate the various visualization options
 # Save this file as: optimization_testing/visualization_examples.py
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
@@ -11,9 +10,12 @@ from datetime import datetime, timedelta
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from optimization_testing.profiling_script import get_system_info, analyze_and_suggest_improvements
+
+from optimization_testing.profiling_utils import (
+    get_system_info, analyze_and_suggest_improvements,
+    setup_visualization_style, create_visualization_dir
+)
 from optimization_testing.visualization import (
-    setup_visualization_style, create_visualization_dir,
     generate_html_dashboard, create_performance_history_dashboard,
     record_performance_history, create_pdf_report
 )

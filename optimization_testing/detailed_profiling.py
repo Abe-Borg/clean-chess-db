@@ -8,26 +8,14 @@ import cProfile
 import pstats
 import pandas as pd
 import time
-import platform
 import psutil
 from io import StringIO
 import matplotlib.pyplot as plt
-import numpy as np
 from agents.Agent import Agent
 from environment.Environ import Environ
 from training.game_simulation import handle_agent_turn, play_one_game
+from profiling_utils import get_system_info
 
-def get_system_info():
-    """Get system information for benchmarking context"""
-    info = {
-        "platform": platform.platform(),
-        "processor": platform.processor(),
-        "python_version": platform.python_version(),
-        "cpu_count": psutil.cpu_count(logical=False),
-        "logical_cpus": psutil.cpu_count(logical=True),
-        "memory_total": psutil.virtual_memory().total / (1024**3),  # GB
-    }
-    return info
 
 def profile_single_game(game_id, chess_data):
     """Profile the processing of a single game to see detailed function performance."""
