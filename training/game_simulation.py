@@ -12,6 +12,12 @@ from multiprocessing import Pool, cpu_count, shared_memory
 import logging
 import threading
 
+import platform
+import pickle
+
+# Determine if we're running on Windows
+IS_WINDOWS = platform.system() == 'Windows'
+
 logger = logging.getLogger("fully_optimized_game_simulation")
 logger.setLevel(logging.CRITICAL)
 if not logger.handlers:
@@ -117,72 +123,88 @@ class AdaptiveChunker:
 # Create a single global instance
 adaptive_chunker = AdaptiveChunker()
 
-# Shared memory implementation
 def create_shared_data(chess_data: pd.DataFrame) -> Dict:
-    """Create shared memory representation of DataFrame."""
-    # Extract game indices as a list
-    game_indices = list(chess_data.index)
-    
-    # Convert to numpy array for shared memory
-    indices_arr = np.array(game_indices, dtype=object)
-    indices_shm = shared_memory.SharedMemory(create=True, size=indices_arr.nbytes)
-    indices_shared = np.ndarray(indices_arr.shape, dtype=indices_arr.dtype, buffer=indices_shm.buf)
-    indices_shared[:] = indices_arr[:]
-    
-    # Create shared memory for PlyCount
-    ply_counts = chess_data['PlyCount'].values
-    ply_shm = shared_memory.SharedMemory(create=True, size=ply_counts.nbytes)
-    ply_shared = np.ndarray(ply_counts.shape, dtype=ply_counts.dtype, buffer=ply_shm.buf)
-    ply_shared[:] = ply_counts[:]
-    
-    # Create shared memory for move columns
-    move_columns = {}
-    for col in chess_data.columns:
-        if col != 'PlyCount':
-            col_data = chess_data[col].values
-            col_shm = shared_memory.SharedMemory(create=True, size=col_data.nbytes)
-            col_shared = np.ndarray(col_data.shape, dtype=col_data.dtype, buffer=col_shm.buf)
-            col_shared[:] = col_data[:]
-            
-            # Store shared memory metadata
-            move_columns[col] = {
-                'shm_name': col_shm.name,
-                'shape': col_data.shape,
-                'dtype': str(col_data.dtype)
-            }
-    
-    # Return all shared memory information
-    return {
-        'indices': {
-            'shm_name': indices_shm.name,
-            'shape': indices_arr.shape,
-            'dtype': str(indices_arr.dtype)
-        },
-        'ply_counts': {
-            'shm_name': ply_shm.name,
-            'shape': ply_counts.shape,
-            'dtype': str(ply_counts.dtype)
-        },
-        'move_columns': move_columns
-    }
+    """Create shared memory representation of DataFrame, with Windows compatibility."""
+    if IS_WINDOWS:
+        # On Windows, use serialization instead of shared memory
+        return {
+            'windows_mode': True,
+            'data': chess_data,  # Pass the DataFrame directly
+        }
+    else:
+        # Unix-based systems can use shared memory
+        # Extract game indices as a list
+        game_indices = list(chess_data.index)
+        
+        # Convert to numpy array for shared memory
+        indices_arr = np.array(game_indices, dtype=object)
+        indices_shm = shared_memory.SharedMemory(create=True, size=indices_arr.nbytes)
+        indices_shared = np.ndarray(indices_arr.shape, dtype=indices_arr.dtype, buffer=indices_shm.buf)
+        indices_shared[:] = indices_arr[:]
+        
+        # Create shared memory for PlyCount
+        ply_counts = chess_data['PlyCount'].values
+        ply_shm = shared_memory.SharedMemory(create=True, size=ply_counts.nbytes)
+        ply_shared = np.ndarray(ply_counts.shape, dtype=ply_counts.dtype, buffer=ply_shm.buf)
+        ply_shared[:] = ply_counts[:]
+        
+        # Create shared memory for move columns
+        move_columns = {}
+        for col in chess_data.columns:
+            if col != 'PlyCount':
+                col_data = chess_data[col].values
+                col_shm = shared_memory.SharedMemory(create=True, size=col_data.nbytes)
+                col_shared = np.ndarray(col_data.shape, dtype=col_data.dtype, buffer=col_shm.buf)
+                col_shared[:] = col_data[:]
+                
+                # Store shared memory metadata
+                move_columns[col] = {
+                    'shm_name': col_shm.name,
+                    'shape': col_data.shape,
+                    'dtype': str(col_data.dtype)
+                }
+        
+        # Return all shared memory information
+        return {
+            'windows_mode': False,
+            'indices': {
+                'shm_name': indices_shm.name,
+                'shape': indices_arr.shape,
+                'dtype': str(indices_arr.dtype)
+            },
+            'ply_counts': {
+                'shm_name': ply_shm.name,
+                'shape': ply_counts.shape,
+                'dtype': str(ply_counts.dtype)
+            },
+            'move_columns': move_columns
+        }
 
 def cleanup_shared_data(shared_data: Dict) -> None:
     """Clean up shared memory resources."""
-    # Clean up indices shared memory
-    indices_shm = shared_memory.SharedMemory(name=shared_data['indices']['shm_name'])
-    indices_shm.close()
-    indices_shm.unlink()
-    
-    # Clean up ply_counts shared memory
-    ply_shm = shared_memory.SharedMemory(name=shared_data['ply_counts']['shm_name'])
-    ply_shm.close()
-    ply_shm.unlink()
-    
-    # Clean up all move column shared memory
-    for col_info in shared_data['move_columns'].values():
-        col_shm = shared_memory.SharedMemory(name=col_info['shm_name'])
-        col_shm.close()
-        col_shm.unlink()
+    # Skip cleanup for Windows mode
+    if shared_data.get('windows_mode', False):
+        return
+        
+    try:
+        # Clean up indices shared memory
+        indices_shm = shared_memory.SharedMemory(name=shared_data['indices']['shm_name'])
+        indices_shm.close()
+        indices_shm.unlink()
+        
+        # Clean up ply_counts shared memory
+        ply_shm = shared_memory.SharedMemory(name=shared_data['ply_counts']['shm_name'])
+        ply_shm.close()
+        ply_shm.unlink()
+        
+        # Clean up all move column shared memory
+        for col_info in shared_data['move_columns'].values():
+            col_shm = shared_memory.SharedMemory(name=col_info['shm_name'])
+            col_shm.close()
+            col_shm.unlink()
+    except FileNotFoundError:
+        # Handle the case where shared memory was already cleaned up
+        print("Warning: Some shared memory segments were already cleaned up")
 
 def play_games(chess_data: pd.DataFrame, pool = None) -> List[str]:
     """Process all games in the provided DataFrame using all optimizations."""
@@ -261,7 +283,7 @@ def process_games_in_parallel(
     return corrupted_games_list
 
 def worker_play_games(game_indices_chunk: List[str], shared_data: Dict) -> List[str]:
-    """Worker function that processes a chunk of games using shared memory."""
+    """Worker function that processes a chunk of games using shared data."""
     corrupted_games = []
     
     # Create agents and environment (reused across games)
@@ -269,6 +291,57 @@ def worker_play_games(game_indices_chunk: List[str], shared_data: Dict) -> List[
     b_agent = Agent('B')
     environ = Environ()
     
+    # Handle Windows mode differently
+    if shared_data.get('windows_mode', False):
+        # For Windows, we have the DataFrame directly
+        chess_data = shared_data['data']
+        
+        # Process each game in the chunk
+        for game_number in game_indices_chunk:
+            try:
+                # Get data for this game
+                row = chess_data.loc[game_number]
+                ply_count = int(row['PlyCount'])
+                
+                # Extract moves from row
+                moves = {}
+                for col in chess_data.columns:
+                    if col != 'PlyCount':
+                        moves[col] = row[col]
+                
+                # Store in game data dictionary
+                game_data = {
+                    'PlyCount': ply_count,
+                    'moves': moves
+                }
+                
+                # Process the game with timing
+                start_time = time.time()
+                try:
+                    result = play_one_game(game_number, game_data, w_agent, b_agent, environ)
+                except Exception as e:
+                    logger.critical(f"Exception processing game {game_number}: {e}")
+                    result = game_number  # flag as corrupted
+                    
+                if result is not None:
+                    corrupted_games.append(game_number)
+                    
+                # Reset environment for next game
+                environ.reset_environ()
+                
+                # Update processing time statistics
+                end_time = time.time()
+                processing_time = end_time - start_time
+                adaptive_chunker.update_processing_time(game_number, processing_time, ply_count)
+                
+            except (KeyError, ValueError) as e:
+                # Game not found or other error
+                logger.critical(f"Error accessing game {game_number}: {e}")
+                corrupted_games.append(game_number)
+                
+        return corrupted_games
+        
+    # Regular shared memory approach for non-Windows systems
     # Access shared memory for game indices
     indices_shm = shared_memory.SharedMemory(name=shared_data['indices']['shm_name'])
     indices_shape = tuple(shared_data['indices']['shape'])

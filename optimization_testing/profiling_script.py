@@ -18,7 +18,7 @@ from io import StringIO
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Define a proper worker initialization function
+# Define worker initialization function
 def init_worker(i):
     """Function to initialize worker processes."""
     return f"Worker {i} initialized"
@@ -70,7 +70,12 @@ def profile_dataframe_processing(df, num_runs=1):
             
             # Process the DataFrame
             start_time = time.time()
-            corrupted_games = play_games(df, pool)
+            try:
+                corrupted_games = play_games(df, pool)
+                corrupted_games_counts.append(len(corrupted_games))
+            except Exception as e:
+                print(f"Error during DataFrame processing: {e}")
+                corrupted_games_counts.append(0)
             end_time = time.time()
             
             # Track memory after
@@ -80,18 +85,20 @@ def profile_dataframe_processing(df, num_runs=1):
             
             elapsed = end_time - start_time
             total_times.append(elapsed)
-            corrupted_games_counts.append(len(corrupted_games))
             
             games_per_second = len(df) / elapsed
             moves_per_second = df['PlyCount'].sum() / elapsed
             
             print(f"\nRun {i+1}: Processed {len(df)} games in {elapsed:.2f}s")
             print(f"Performance: {games_per_second:.2f} games/s, {moves_per_second:.2f} moves/s")
-            print(f"Corrupted games: {len(corrupted_games)}")
+            print(f"Corrupted games: {corrupted_games_counts[-1]}")
             print(f"Memory usage: {memory_diff:.2f} MB")
             
             # Print cache statistics
             Environ.print_cache_stats()
+            
+            # Add a small delay between runs
+            time.sleep(1)
     
     if num_runs > 1:
         avg_time = sum(total_times) / num_runs
@@ -130,31 +137,35 @@ def run_profiling(filepath, sample_size=None, profile_run=True):
         # Create a persistent process pool for the profiled run
         num_workers = max(1, cpu_count() - 1)
         
-        pr = cProfile.Profile()
-        pr.enable()
-        
-        with Pool(processes=num_workers) as pool:
-            # Warm up workers first
-            warm_up_workers(pool, num_workers)
+        try:
+            pr = cProfile.Profile()
+            pr.enable()
             
-            # Process the DataFrame
-            corrupted_games = play_games(df, pool)
+            with Pool(processes=num_workers) as pool:
+                # Warm up workers first
+                warm_up_workers(pool, num_workers)
+                
+                # Process the DataFrame
+                corrupted_games = play_games(df, pool)
+                
+            pr.disable()
             
-        pr.disable()
-        
-        # Print top functions by cumulative time
-        s = StringIO()
-        ps = pstats.Stats(pr, stream=s).sort_stats('cumulative')
-        ps.print_stats(20)  # Top 20 functions
-        print("\nTop 20 functions by cumulative time:")
-        print(s.getvalue())
-        
-        # Print call stats for key functions
-        print("\nDetailed stats for key functions:")
-        stats = pstats.Stats(pr)
-        for func_pattern in ['handle_agent_turn', 'choose_action', 'get_legal_moves', 'worker_play_games', 'create_shared_data']:
-            print(f"\n{func_pattern}:")
-            stats.sort_stats('cumulative').print_stats(func_pattern, 5)
+            # Print top functions by cumulative time
+            s = StringIO()
+            ps = pstats.Stats(pr, stream=s).sort_stats('cumulative')
+            ps.print_stats(20)  # Top 20 functions
+            print("\nTop 20 functions by cumulative time:")
+            print(s.getvalue())
+            
+            # Print call stats for key functions
+            print("\nDetailed stats for key functions:")
+            stats = pstats.Stats(pr)
+            for func_pattern in ['handle_agent_turn', 'choose_action', 'get_legal_moves', 'worker_play_games', 'create_shared_data']:
+                print(f"\n{func_pattern}:")
+                stats.sort_stats('cumulative').print_stats(func_pattern, 5)
+                
+        except Exception as e:
+            print(f"Error during profiling: {e}")
         
         # Return without additional runs
         return 0
@@ -193,15 +204,18 @@ def profile_memory_usage(filepath, sample_sizes):
             warm_up_workers(pool, num_workers)
             
             # Process the DataFrame
-            start_time = time.time()
-            corrupted_games = play_games(sample_df, pool)
-            end_time = time.time()
+            try:
+                start_time = time.time()
+                corrupted_games = play_games(sample_df, pool)
+                end_time = time.time()
+                elapsed = end_time - start_time
+            except Exception as e:
+                print(f"Error processing DataFrame of size {size}: {e}")
+                elapsed = 0
         
         # Measure memory after
         memory_after = psutil.Process().memory_info().rss / (1024 * 1024)  # MB
         memory_diff = memory_after - memory_before
-        
-        elapsed = end_time - start_time
         
         print(f"Sample size: {size}")
         print(f"Memory usage: {memory_diff:.2f} MB")
@@ -212,22 +226,26 @@ def profile_memory_usage(filepath, sample_sizes):
         memory_results['processing_time'].append(elapsed)
     
     # Plot the results
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-    
-    ax1.plot(memory_results['sample_size'], memory_results['memory_usage'], 'o-')
-    ax1.set_xlabel('Sample Size (games)')
-    ax1.set_ylabel('Memory Usage (MB)')
-    ax1.set_title('Memory Usage by Sample Size')
-    ax1.grid(True)
-    
-    ax2.plot(memory_results['sample_size'], memory_results['processing_time'], 'o-')
-    ax2.set_xlabel('Sample Size (games)')
-    ax2.set_ylabel('Processing Time (seconds)')
-    ax2.set_title('Processing Time by Sample Size')
-    ax2.grid(True)
-    
-    plt.tight_layout()
-    plt.savefig('memory_profile.png')
+    try:
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+        
+        ax1.plot(memory_results['sample_size'], memory_results['memory_usage'], 'o-')
+        ax1.set_xlabel('Sample Size (games)')
+        ax1.set_ylabel('Memory Usage (MB)')
+        ax1.set_title('Memory Usage by Sample Size')
+        ax1.grid(True)
+        
+        ax2.plot(memory_results['sample_size'], memory_results['processing_time'], 'o-')
+        ax2.set_xlabel('Sample Size (games)')
+        ax2.set_ylabel('Processing Time (seconds)')
+        ax2.set_title('Processing Time by Sample Size')
+        ax2.grid(True)
+        
+        plt.tight_layout()
+        plt.savefig('memory_profile.png')
+        print("Memory profile plot saved to memory_profile.png")
+    except Exception as e:
+        print(f"Error creating memory profile plot: {e}")
     
     return memory_results
 
@@ -270,25 +288,19 @@ def profile_cpu_utilization(filepath, sample_size=None):
         
         # Process the DataFrame
         print("\nProcessing DataFrame...")
-        start_time = time.time()
-        corrupted_games = play_games(df, pool)
-        end_time = time.time()
+        try:
+            start_time = time.time()
+            corrupted_games = play_games(df, pool)
+            end_time = time.time()
+            elapsed = end_time - start_time
+            print(f"Processed {len(df)} games in {elapsed:.2f}s")
+        except Exception as e:
+            print(f"Error processing DataFrame: {e}")
+            elapsed = 0
     
     # Stop the CPU monitoring thread
     stop_event.set()
     cpu_thread.join(timeout=1.0)
-    
-    elapsed = end_time - start_time
-    print(f"Processed {len(df)} games in {elapsed:.2f}s")
-    
-    # Plot CPU utilization
-    plt.figure(figsize=(10, 6))
-    plt.plot(timestamps, cpu_percents)
-    plt.xlabel('Time (seconds)')
-    plt.ylabel('CPU Utilization (%)')
-    plt.title('CPU Utilization During Processing')
-    plt.grid(True)
-    plt.savefig('cpu_utilization.png')
     
     # Calculate statistics
     avg_cpu = sum(cpu_percents) / len(cpu_percents) if cpu_percents else 0
@@ -296,6 +308,19 @@ def profile_cpu_utilization(filepath, sample_size=None):
     
     print(f"Average CPU utilization: {avg_cpu:.2f}%")
     print(f"Maximum CPU utilization: {max_cpu:.2f}%")
+    
+    # Plot CPU utilization
+    try:
+        plt.figure(figsize=(10, 6))
+        plt.plot(timestamps, cpu_percents)
+        plt.xlabel('Time (seconds)')
+        plt.ylabel('CPU Utilization (%)')
+        plt.title('CPU Utilization During Processing')
+        plt.grid(True)
+        plt.savefig('cpu_utilization.png')
+        print("CPU utilization plot saved to cpu_utilization.png")
+    except Exception as e:
+        print(f"Error creating CPU utilization plot: {e}")
     
     return {
         'timestamps': timestamps,
@@ -323,15 +348,22 @@ if __name__ == "__main__":
         from utils import game_settings
         filepath = game_settings.chess_games_filepath_part_1
     
-    # Get sample size
-    sample_size = args.sample_size or 10000
+    # Get sample size - use smaller samples on Windows
+    if platform.system() == 'Windows':
+        default_sample_size = 500
+    else:
+        default_sample_size = 5000
+    sample_size = args.sample_size or default_sample_size
     
     # Run the requested profiling mode
     if args.mode == "profile" or args.mode == "all":
         run_profiling(filepath, sample_size, profile_run=True)
     
     if args.mode == "memory" or args.mode == "all":
-        sample_sizes = [100, 500, 2000, 5000, min(10000, sample_size)]
+        if platform.system() == 'Windows':
+            sample_sizes = [50, 100, 200, 500]
+        else:
+            sample_sizes = [100, 500, 2000, min(5000, sample_size)]
         profile_memory_usage(filepath, sample_sizes)
     
     if args.mode == "cpu" or args.mode == "all":

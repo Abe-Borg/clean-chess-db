@@ -12,12 +12,13 @@ import platform
 import psutil
 from multiprocessing import Pool, cpu_count
 import gc  # For garbage collection between runs
+import time
 
 from training.game_simulation import play_games
 from utils import game_settings
 from environment.Environ import Environ
 
-# Define a proper worker initialization function
+# Define worker initialization function
 def init_worker(i):
     """Function to initialize worker processes."""
     return f"Worker {i} initialized"
@@ -202,7 +203,12 @@ def run_benchmark(df, sample_sizes=None, runs_per_sample=3):
                 
                 # Time optimized implementation
                 with Timer("Optimized implementation") as t:
-                    play_games(sample_df, pool)
+                    try:
+                        play_games(sample_df, pool)
+                    except Exception as e:
+                        print(f"Error in optimized implementation: {e}")
+                        # If there's an error, mark this run as much slower than unoptimized
+                        t.elapsed = unoptimized_times[-1] * 2
                 optimized_times.append(t.elapsed)
                 
                 # Measure memory after optimized run
@@ -211,6 +217,9 @@ def run_benchmark(df, sample_sizes=None, runs_per_sample=3):
                 
                 # Force garbage collection
                 gc.collect()
+                
+                # Add delay between runs to let system stabilize
+                time.sleep(1)
             
             # Calculate average times and metrics
             avg_unoptimized = sum(unoptimized_times) / len(unoptimized_times)
@@ -312,9 +321,12 @@ if __name__ == "__main__":
     df = pd.read_pickle(filepath, compression='zip')
     print(f"Loaded {len(df)} games, average {df['PlyCount'].mean():.2f} moves per game")
     
-    # Define sample sizes
-    max_size = min(10000, len(df))  # Limit maximum sample size
-    sample_sizes = [100, 500, 2000, 5000, max_size]
+    # For initial testing, use smaller sample sizes
+    if platform.system() == 'Windows':
+        # Windows might be slower for the unoptimized version
+        sample_sizes = [50, 100, 200, 500]
+    else:
+        sample_sizes = [100, 500, 2000, 5000]
     
     # Run benchmarks
     results = run_benchmark(df, sample_sizes, runs_per_sample=2)
