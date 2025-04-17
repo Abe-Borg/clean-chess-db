@@ -131,7 +131,7 @@ def run_benchmark(df, sample_sizes=None, runs_per_sample=3):
     """Run benchmarks on various sample sizes for both implementations."""
     if sample_sizes is None:
         # Default sample sizes
-        sample_sizes = [100, 500, 1000]
+        sample_sizes = [100, 500, 1000, 10_000, 50_000]
     
     results = {
         'sample_size': [],

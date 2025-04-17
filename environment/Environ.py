@@ -133,15 +133,11 @@ class Environ:
                 self._legal_moves_cache = legal_moves
                 self._last_board_fen = current_fen
                 
-                # Add diagnostic print for debugging
-                print(f"CACHE HIT: {current_fen[:20]}... ({len(legal_moves)} moves)")
                 return legal_moves
         
         # Cache miss - calculate legal moves
         with self._global_cache_lock:
             self._global_cache_misses += 1
-            # Add diagnostic print for debugging
-            print(f"CACHE MISS: {current_fen[:20]}...")
         
         legal_moves = [self.board.san(move) for move in self.board.legal_moves]
         

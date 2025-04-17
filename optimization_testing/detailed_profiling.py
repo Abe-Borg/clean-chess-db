@@ -197,7 +197,7 @@ def profile_legal_moves_cache(chess_data, num_games=10):
     plt.savefig('cache_performance.png')
     print("\nCache performance plot saved to cache_performance.png")
     
-def profile_chunking_strategy(chess_data, chunk_sizes=[50, 100, 200, 500]):
+def profile_chunking_strategy(chess_data, chunk_sizes=[50, 100, 200, 500, 1000, 10_000]):
     """Profile the effectiveness of the chunking strategy."""
     from training.game_simulation import adaptive_chunker, process_games_in_parallel
     
@@ -288,7 +288,7 @@ if __name__ == "__main__":
     print(f"Loaded {len(chess_data)} games, average {chess_data['PlyCount'].mean():.2f} moves per game")
     
     # Take a smaller sample for profiling
-    sample_size = 200
+    sample_size = 1000
     if len(chess_data) > sample_size:
         chess_data = chess_data.sample(sample_size, random_state=42)
         print(f"Using sample of {sample_size} games")
