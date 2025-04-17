@@ -22,7 +22,6 @@ import random
 import argparse
 from utils import game_settings
 
-# Import visualization module
 from profiling_utils import (get_system_info, setup_visualization_style, create_visualization_dir, 
                              add_visualization_options, analyze_and_suggest_improvements)
 from visualization import (
@@ -111,9 +110,8 @@ def visualize_profiling_stats(stats, n=20, output_file='profile_stats.png'):
     plt.savefig(output_file)
     print(f"Profiling statistics visualization saved to {output_file}")
 
-# Add this function to visualize cache performance
 def visualize_cache_performance(cache_stats, output_file='cache_performance.png'):
-    """Create visualization for cache performance metrics"""
+    """Create visualization for cache performance metrics with empty data handling"""
     print("\nGenerating visualization of cache performance...")
     
     # Extract cache statistics
@@ -127,13 +125,23 @@ def visualize_cache_performance(cache_stats, output_file='cache_performance.png'
     
     # Plot 1: Cache hits/misses pie chart
     labels = ['Cache Hits', 'Cache Misses']
-    sizes = [hits, misses]
-    colors = ['#66b3ff', '#ff9999']
-    explode = (0.1, 0)  # explode the 1st slice (Hits)
     
-    ax1.pie(sizes, explode=explode, labels=labels, colors=colors, autopct='%1.1f%%',
-            shadow=True, startangle=90)
-    ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
+    if total == 0:
+        # Handle case with no cache data
+        ax1.text(0.5, 0.5, 'No cache hits or misses recorded',
+                ha='center', va='center', fontsize=12,
+                bbox=dict(facecolor='lightgray', alpha=0.5))
+        ax1.axis('off')
+    else:
+        # Normal pie chart with data
+        sizes = [hits, misses]
+        colors = ['#66b3ff', '#ff9999']
+        explode = (0.1, 0) if hits > 0 else (0, 0.1)  # explode the non-zero slice
+        
+        ax1.pie(sizes, explode=explode, labels=labels, colors=colors, autopct='%1.1f%%',
+                shadow=True, startangle=90)
+        ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
+    
     ax1.set_title('Cache Hit/Miss Ratio')
     
     # Plot 2: Cache efficiency gauge
@@ -167,10 +175,16 @@ def visualize_cache_performance(cache_stats, output_file='cache_performance.png'
                 ha='center', bbox=dict(facecolor='white', alpha=0.5))
     
     plt.tight_layout()
-    plt.savefig(output_file)
-    print(f"Cache performance visualization saved to {output_file}")
+    
+    try:
+        plt.savefig(output_file)
+        print(f"Cache performance visualization saved to {output_file}")
+    except Exception as e:
+        print(f"Error saving cache visualization: {e}")
+    
+    # Close the figure to free memory
+    plt.close(fig)
 
-# Add this function to visualize memory usage over time
 def visualize_memory_over_time(memory_data, output_file='memory_over_time.png'):
     """Create visualization for memory usage tracked over time"""
     print("\nGenerating visualization of memory usage over time...")
@@ -228,7 +242,6 @@ def visualize_memory_over_time(memory_data, output_file='memory_over_time.png'):
     plt.savefig(output_file)
     print(f"Memory usage visualization saved to {output_file}")
 
-# Add this function to visualize worker performance
 def visualize_worker_performance(worker_stats, output_file='worker_performance.png'):
     """Create visualization for worker thread/process performance"""
     print("\nGenerating visualization of worker performance...")
@@ -296,7 +309,6 @@ def visualize_worker_performance(worker_stats, output_file='worker_performance.p
     plt.savefig(output_file)
     print(f"Worker performance visualization saved to {output_file}")
 
-# Add this function to create a comprehensive dashboard
 def create_performance_dashboard(results, output_file='performance_dashboard.png'):
     """Create a comprehensive performance dashboard from all metrics"""
     print("\nGenerating comprehensive performance dashboard...")
@@ -517,7 +529,6 @@ def create_performance_dashboard(results, output_file='performance_dashboard.png
     
     return fig
 
-# Define worker initialization function
 def init_worker(i):
     """Function to initialize worker processes."""
     return f"Worker {i} initialized"
@@ -596,7 +607,6 @@ def profile_dataframe_processing(df, num_runs=1):
     
     return total_times[0]  # Return the first run time
 
-# Modify run_profiling to collect and visualize results
 def run_profiling(filepath, sample_size=None, profile_run=True):
     """Run profiling on a dataframe with detailed stats and visualizations"""
     print("\n" + "="*50)
@@ -919,7 +929,6 @@ def play_games_chunk(game_chunk):
     corrupted_games = play_games(game_chunk, None)  # None = no pool, local execution
     return corrupted_games
 
-# Add a new function to run profiling with detailed worker tracking
 def run_profiling_with_worker_tracking(filepath, sample_size=None, chunk_size=100):
     """Run profiling with detailed worker performance tracking"""
     print("\n" + "="*50)
@@ -1232,7 +1241,6 @@ def create_game_level_visualizations(metrics, output_prefix='game_level'):
     
     print(f"Game-level visualizations saved with prefix '{output_prefix}'")
 
-# Modified main function to include game-level analysis
 def run_comprehensive_profiling(filepath, sample_size=None):
     """Run comprehensive profiling with all visualization features"""
     print("\n" + "="*50)

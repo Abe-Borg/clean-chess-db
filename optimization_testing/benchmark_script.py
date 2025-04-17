@@ -19,7 +19,6 @@ from utils import game_settings
 from environment.Environ import Environ
 from profiling_utils import get_system_info
 
-# Define worker initialization function
 def init_worker(i):
     """Function to initialize worker processes."""
     return f"Worker {i} initialized"

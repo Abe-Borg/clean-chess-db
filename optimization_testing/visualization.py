@@ -636,7 +636,6 @@ def create_pdf_report(results, output_file='profiling_report.pdf'):
     
     print(f"Performance report saved to {output_file}")
 
-# Add this to the main if __name__ == "__main__" block
 def add_visualization_options(parser):
     """Add visualization-specific command line options"""
     parser.add_argument("--vis_dir", help="Output directory for visualizations")
