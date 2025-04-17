@@ -22,6 +22,13 @@ import numpy as np
 from matplotlib.ticker import PercentFormatter
 from collections import defaultdict, Counter
 import random
+import argparse
+from utils import game_settings
+
+# Import visualization module
+from visualization import (setup_visualization_style, create_visualization_dir,
+                            generate_html_dashboard, create_performance_history_dashboard,
+                            record_performance_history, create_pdf_report, add_visualization_options)
 
 
 def visualize_profiling_stats(stats, n=20, output_file='profile_stats.png'):
@@ -1626,13 +1633,26 @@ def profile_cpu_utilization(filepath, sample_size=None):
 
 if __name__ == "__main__":
     # Parse command-line arguments
-    import argparse
     parser = argparse.ArgumentParser(description="Profile chess database processing system")
     parser.add_argument("--filepath", help="Path to the DataFrame file")
     parser.add_argument("--sample_size", type=int, help="Sample size to use")
-    parser.add_argument("--mode", choices=["profile", "memory", "cpu", "all"], default="profile",
-                       help="Profiling mode: profile, memory, cpu, or all")
+    parser.add_argument("--mode", choices=["profile", "memory", "cpu", "all", "game_level", "worker", "comprehensive"],
+                       default="profile", help="Profiling mode")
+    parser.add_argument("--chunk_size", type=int, default=100, 
+                        help="Chunk size for parallel processing (worker mode)")
+    
+    # Add visualization options
+    parser = add_visualization_options(parser)
+    
     args = parser.parse_args()
+    
+    # Set up visualization style
+    setup_visualization_style()
+    
+    # Create visualization directory if specified
+    vis_dir = args.vis_dir if args.vis_dir else "."
+    if args.vis_dir:
+        vis_dir = create_visualization_dir(args.vis_dir)
     
     # Get file path
     if args.filepath:
@@ -1650,17 +1670,59 @@ if __name__ == "__main__":
     sample_size = args.sample_size or default_sample_size
     
     # Run the requested profiling mode
-    if args.mode == "profile" or args.mode == "all":
-        run_profiling(filepath, sample_size, profile_run=True)
+    results = None
     
-    if args.mode == "memory" or args.mode == "all":
+    if args.mode == "profile" or args.mode == "all":
+        results = run_profiling(filepath, sample_size, profile_run=True)
+    
+    elif args.mode == "memory" or args.mode == "all":
         if platform.system() == 'Windows':
             sample_sizes = [50, 100, 200, 500]
         else:
             sample_sizes = [100, 500, 2000, min(5000, sample_size)]
-        profile_memory_usage(filepath, sample_sizes)
+        memory_results = profile_memory_usage(filepath, sample_sizes)
+        results = {'memory_by_sample': memory_results}
     
-    if args.mode == "cpu" or args.mode == "all":
-        profile_cpu_utilization(filepath, sample_size)
+    elif args.mode == "cpu" or args.mode == "all":
+        cpu_results = profile_cpu_utilization(filepath, sample_size)
+        results = {'cpu': cpu_results}
+    
+    elif args.mode == "game_level":
+        # Run game-level analysis
+        print("\nRunning game-level performance analysis...")
+        # Use smaller sample for game-level analysis
+        game_level_sample_size = min(100, sample_size)
+        game_metrics = analyze_game_level_performance(filepath, game_level_sample_size)
+        results = {'game_level': game_metrics}
+    
+    elif args.mode == "worker":
+        # Run worker performance monitoring
+        chunk_size = args.chunk_size
+        results = run_profiling_with_worker_tracking(filepath, sample_size, chunk_size)
+    
+    elif args.mode == "comprehensive":
+        # Run all profiling modes with appropriate sample sizes
+        results = run_comprehensive_profiling(filepath, sample_size)
+    
+    # Generate visualizations if results are available
+    if results:
+        # Generate HTML dashboard if requested
+        if args.html_dashboard:
+            html_output = os.path.join(vis_dir, "profiling_dashboard.html")
+            generate_html_dashboard(results, html_output)
+        
+        # Generate PDF report if requested
+        if args.pdf_report:
+            pdf_output = os.path.join(vis_dir, "profiling_report.pdf")
+            create_pdf_report(results, pdf_output)
+        
+        # Record performance history if requested
+        if args.track_history:
+            history_file = args.history_file
+            record_performance_history(results, history_file)
+            
+            # Create history dashboard
+            history_dashboard = os.path.join(vis_dir, "performance_history.png")
+            create_performance_history_dashboard(history_file, history_dashboard)
     
     print("\nProfiling complete!")
