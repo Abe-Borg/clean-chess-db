@@ -12,11 +12,23 @@ import threading
 import multiprocessing
 from multiprocessing import Pool, cpu_count
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from training.game_simulation import play_games, warm_up_workers
+from training.game_simulation import play_games
 from environment.Environ import Environ
 from io import StringIO
 import matplotlib.pyplot as plt
 import numpy as np
+
+# Define a proper worker initialization function
+def init_worker(i):
+    """Function to initialize worker processes."""
+    return f"Worker {i} initialized"
+
+def warm_up_workers(pool, num_workers):
+    """Initialize worker processes with warm-up tasks."""
+    print("Warming up worker processes...")
+    results = pool.map(init_worker, range(num_workers))
+    for result in results:
+        print(result)
 
 def get_system_info():
     """Get system information for benchmarking context"""

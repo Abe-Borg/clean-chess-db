@@ -13,9 +13,21 @@ import psutil
 from multiprocessing import Pool, cpu_count
 import gc  # For garbage collection between runs
 
-from training.game_simulation import play_games, warm_up_workers
+from training.game_simulation import play_games
 from utils import game_settings
 from environment.Environ import Environ
+
+# Define a proper worker initialization function
+def init_worker(i):
+    """Function to initialize worker processes."""
+    return f"Worker {i} initialized"
+
+def warm_up_workers(pool, num_workers):
+    """Initialize worker processes with warm-up tasks."""
+    print("Warming up worker processes...")
+    results = pool.map(init_worker, range(num_workers))
+    for result in results:
+        print(result)
 
 class Timer:
     """Timer class for measuring execution time"""

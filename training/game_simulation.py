@@ -21,6 +21,13 @@ if not logger.handlers:
     fh.setFormatter(formatter)
     logger.addHandler(fh)
 
+
+def init_worker(i):
+    """Function to initialize worker processes."""
+    return f"Worker {i} initialized"
+
+
+
 # Global adaptive chunker for tracking game processing time
 class AdaptiveChunker:
     """Tracks game processing times and creates balanced chunks."""
@@ -399,10 +406,9 @@ def handle_agent_turn(
     environ.update_curr_state()
     return None
 
-# Entry point for benchmarking
 def warm_up_workers(pool, num_workers):
     """Initialize worker processes with warm-up tasks."""
     print("Warming up worker processes...")
-    results = pool.map(lambda i: f"Worker {i} initialized", range(num_workers))
+    results = pool.map(init_worker, range(num_workers))
     for result in results:
         print(result)
