@@ -26,9 +26,10 @@ import argparse
 from utils import game_settings
 
 # Import visualization module
-from visualization import (setup_visualization_style, create_visualization_dir,
+from profiling_utils import (setup_visualization_style, create_visualization_dir, add_visualization_options)
+from visualization import (
                             generate_html_dashboard, create_performance_history_dashboard,
-                            record_performance_history, create_pdf_report, add_visualization_options)
+                            record_performance_history, create_pdf_report)
 
 
 def visualize_profiling_stats(stats, n=20, output_file='profile_stats.png'):
@@ -609,7 +610,6 @@ def profile_dataframe_processing(df, num_runs=1):
     
     return total_times[0]  # Return the first run time
 
-
 # Modify run_profiling to collect and visualize results
 def run_profiling(filepath, sample_size=None, profile_run=True):
     """Run profiling on a dataframe with detailed stats and visualizations"""
@@ -1011,85 +1011,7 @@ def run_profiling_with_worker_tracking(filepath, sample_size=None, chunk_size=10
     
     return results
 
-# Utility function to analyze profiling results and suggest improvements
-def analyze_and_suggest_improvements(results):
-    """Analyze profiling results and suggest possible improvements"""
-    suggestions = []
-    
-    # Check CPU utilization
-    cpu_data = results.get('cpu', {})
-    if cpu_data:
-        avg_cpu = cpu_data.get('avg_cpu', 0)
-        if avg_cpu < 50:
-            suggestions.append("CPU utilization is below 50%. Consider increasing parallelism or "
-                              "chunk size to better utilize available CPU resources.")
-        elif avg_cpu > 90:
-            suggestions.append("CPU utilization is very high (>90%). This is good for throughput "
-                              "but might cause system responsiveness issues. Consider setting "
-                              "process nice values if running in production.")
-    
-    # Check worker balance
-    worker_stats = results.get('workers', {})
-    if worker_stats and len(worker_stats) > 1:
-        # Calculate task imbalance
-        tasks = [w.get('tasks_completed', 0) for w in worker_stats.values()]
-        if tasks:
-            min_tasks = min(tasks)
-            max_tasks = max(tasks)
-            imbalance = (max_tasks - min_tasks) / max_tasks * 100 if max_tasks > 0 else 0
-            
-            if imbalance > 20:
-                suggestions.append(f"Worker load is imbalanced ({imbalance:.1f}% difference). "
-                                 f"Consider using smaller chunk sizes or a dynamic work scheduler.")
-    
-    # Check memory usage pattern
-    memory_data = results.get('memory_tracking', {})
-    if memory_data:
-        memory_usage = memory_data.get('memory_usage', [])
-        if memory_usage and len(memory_usage) > 2:
-            # Check for steady memory growth
-            first_half = memory_usage[:len(memory_usage)//2]
-            second_half = memory_usage[len(memory_usage)//2:]
-            
-            first_half_avg = sum(first_half) / len(first_half)
-            second_half_avg = sum(second_half) / len(second_half)
-            
-            growth_pct = (second_half_avg - first_half_avg) / first_half_avg * 100
-            
-            if growth_pct > 50:
-                suggestions.append(f"Memory usage shows significant growth ({growth_pct:.1f}%). "
-                                 f"There might be a memory leak or inefficient cache management.")
-    
-    # Check cache efficiency
-    cache_stats = results.get('cache', {})
-    if cache_stats:
-        hits = cache_stats.get('hits', 0)
-        misses = cache_stats.get('misses', 0)
-        total = hits + misses
-        
-        if total > 0:
-            hit_rate = hits / total * 100
-            if hit_rate < 30:
-                suggestions.append(f"Cache hit rate is low ({hit_rate:.1f}%). Consider "
-                                 f"reviewing cache strategy or preloading common positions.")
-    
-    # Check top functions for optimization opportunities
-    top_funcs = results.get('top_functions', [])
-    if top_funcs:
-        time_heavy_funcs = [f for f in top_funcs if f.get('time', 0) > 1.0]
-        if time_heavy_funcs:
-            func_names = ", ".join(f['name'] for f in time_heavy_funcs[:3])
-            suggestions.append(f"Functions consuming significant time: {func_names}. "
-                             f"These are prime candidates for optimization.")
-    
-    # Generate overall recommendations
-    if not suggestions:
-        suggestions.append("No specific performance issues detected. The system appears to be "
-                         "functioning efficiently based on the available metrics.")
-    
-    return suggestions
 
-# Add these functions to analyze game-level performance characteristics
 
 def analyze_game_level_performance(games_df, sample_size=None):
     """

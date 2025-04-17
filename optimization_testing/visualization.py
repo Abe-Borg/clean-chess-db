@@ -10,7 +10,7 @@ import os
 import time
 from datetime import datetime
 import matplotlib.dates as mdates
-from profiling_script import analyze_and_suggest_improvements
+from profiling_utils import analyze_and_suggest_improvements
 
 # Set up styling for all visualizations
 def setup_visualization_style():
