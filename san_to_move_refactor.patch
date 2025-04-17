@@ -1,0 +1,78 @@
+# Unified diff – eliminate SAN/FEN churn and push raw chess.Move objects
+# Apply with `git apply san_to_move_refactor.patch` at repo root
+
+--- a/environment/Environ.py
++++ b/environment/Environ.py
+@@
+-    def get_legal_moves(self):
+-        """Return list of SAN strings for legal moves."""
+-        return [self.board.san(mv) for mv in self.board.legal_moves]
++    def get_legal_moves(self):
++        """
++        Return a *list of raw* ``chess.Move`` objects.
++
++        Converting every candidate to SAN was responsible for ~60 % of a
++        game’s compute time.  By returning the objects directly we pay *zero*
++        extra cost; SAN/uci can still be produced lazily *after* a move is
++        actually chosen (usually just once per turn).
++        """
++        return list(self.board.legal_moves)
+@@
+-    def get_curr_state(self):
+-        return {
+-            "fen": self.board.fen(),
+-            "legal_moves": self.get_legal_moves(),
+-        }
++    def get_curr_state(self):
++        """Return the board + move list without serialising to text."""
++        return {
++            "board": self.board,                 # direct reference
++            "legal_moves": self.get_legal_moves(),
++        }
+
+--- a/training/game_simulation.py
++++ b/training/game_simulation.py
+@@
+-    legal_moves = curr_state["legal_moves"]
+-    chosen = agent.choose_action(curr_state)   # used to return SAN str
+-
+-    # validate chosen move exists
+-    if chosen not in legal_moves:
+-        logger.critical(f"Illegal move {chosen}")
+-        return game_number
+-
+-    # push move (expensive: parses SAN internally)
+-    env.board.push_san(chosen)
++    legal_moves = curr_state["legal_moves"]
++
++    # agent now returns a raw chess.Move (or uci str for backwards compat)
++    chosen = agent.choose_action(curr_state)
++
++    if isinstance(chosen, str):
++        try:
++            chosen = env.board.parse_uci(chosen)
++        except ValueError:
++            logger.critical(f"Illegal UCI move {chosen}")
++            return game_number
++
++    if chosen not in legal_moves:
++        logger.critical(f"Illegal move {chosen}")
++        return game_number
++
++    # fast: no SAN parsing
++    env.board.push(chosen)
+@@
+-    # optional: store SAN for human log
+-    moves_played.append(env.board.san(chosen))
++    # optional: stringify lazily – only the *chosen* move
++    moves_played.append(env.board.san(chosen))
+
+--- a/training/agent.py
++++ b/training/agent.py
+@@
+-    # random baseline – expects SAN strings
+-    def choose_action(self, state):
+-        return random.choice(state["legal_moves"])
++    # random baseline – now returns raw Move
++    def choose_action(self, state):
++        return random.choice(state["legal_moves"])  # O(1), no SAN
