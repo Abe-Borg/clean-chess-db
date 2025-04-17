@@ -1,4 +1,4 @@
-# Enhanced Environ.py with global position caching
+# file: environment/Environ.py
 
 import chess
 from utils import constants

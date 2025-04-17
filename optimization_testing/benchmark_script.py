@@ -1,4 +1,5 @@
 # optimization_testing/benchmark_script.py
+
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,7 +13,7 @@ import psutil
 from multiprocessing import Pool, cpu_count
 
 from training.game_simulation import play_games as original_play_games
-from training.optimized_game_simulation import play_games as optimized_play_games
+from training.game_simulation import play_games as optimized_play_games
 
 class Timer:
     """Timer class for measuring execution time"""

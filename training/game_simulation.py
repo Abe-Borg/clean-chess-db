@@ -1,4 +1,4 @@
-# file: training/fully_optimized_game_simulation.py
+# file: training/game_simulation.py
 
 from typing import Callable, List, Dict, Any, Tuple, Optional
 import pandas as pd
@@ -177,7 +177,7 @@ def cleanup_shared_data(shared_data: Dict) -> None:
         col_shm.close()
         col_shm.unlink()
 
-def play_games(chess_data: pd.DataFrame, pool: Optional[Pool] = None) -> List[str]:
+def play_games(chess_data: pd.DataFrame, pool = None) -> List[str]:
     """Process all games in the provided DataFrame using all optimizations."""
     # Handle empty DataFrame
     if chess_data.empty:
@@ -223,7 +223,7 @@ def process_games_in_parallel(
     worker_function: Callable[..., List], 
     shared_data: Dict,
     chess_data: pd.DataFrame,
-    pool: Optional[Pool] = None
+    pool = None
 ) -> List[str]:
     """Process games in parallel with optimized chunking."""
     # Handle the case when there are no games
