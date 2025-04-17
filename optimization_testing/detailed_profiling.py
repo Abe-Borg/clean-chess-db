@@ -80,12 +80,22 @@ def profile_single_game(game_id, chess_data):
 
 def profile_multiple_games(chess_data, num_games=5):
     """Profile multiple individual games to get a representative sample."""
-    # Use games with different PlyCount values for better representation
-    bins = pd.qcut(chess_data['PlyCount'], num_games, duplicates='drop')
-    sample_games = chess_data.groupby(bins).apply(lambda x: x.iloc[0]).index.get_level_values(1)
+    # Get games with different move counts for better representation
+    # Sort by PlyCount and select evenly spread samples
+    sorted_data = chess_data.sort_values('PlyCount')
+    step_size = len(sorted_data) // num_games
+    
+    sample_games = []
+    for i in range(num_games):
+        index = min(i * step_size, len(sorted_data) - 1)
+        sample_games.append(sorted_data.index[index])
+    
+    print(f"Selected {len(sample_games)} games with varying move counts for profiling")
     
     results = []
     for game_id in sample_games:
+        ply_count = chess_data.loc[game_id, 'PlyCount']
+        print(f"\nProfiling game {game_id} with {ply_count} moves")
         result = profile_single_game(game_id, chess_data)
         results.append((game_id, result))
         
@@ -104,7 +114,8 @@ def profile_legal_moves_cache(chess_data, num_games=10):
     Environ._global_cache_misses = 0
     
     # Process games sequentially to build up cache
-    sample_games = chess_data.iloc[:num_games].index
+    # Take a sample of games
+    sample_games = chess_data.sample(min(num_games, len(chess_data)), random_state=42).index
     
     move_counts = []
     cache_hits = []
