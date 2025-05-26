@@ -20,64 +20,66 @@ def test_small_sample():
     """Test the optimizations with a small sample to verify functionality."""
     print("Testing Priority 1 optimizations...")
     print("=" * 50)
-    
+
+    chess_data = None
+    filepath = game_settings.chess_games_filepath_part_1
     try:
-        chess_data = pd.read_pickle(game_settings.chess_games_filepath_part_1)
-        print(f"Loaded {len(chess_data)} games")
-    except Exception as e:
+        chess_data = pd.read_pickle(filepath, compression='zip')
+        print(f"Loaded {len(chess_data)} games from {filepath}")
+    except FileNotFoundError as e:
         print(f"Failed to load chess data {e}")
+    
+    if chess_data is None: 
+        print("no chess data, exiting test.")
+        return
 
-        # Test with a small sample first
-        sample_size = 100
-        if len(chess_data) > sample_size:
-            chess_data_sample = chess_data.head(sample_size)
-            print(f"Using sample of {sample_size} games for testing")
-        else:
-            chess_data_sample = chess_data
-            print(f"Using all {len(chess_data_sample)} games")
+    # Test with a small sample first
+    sample_size = 100
+    if len(chess_data) > sample_size:
+        chess_data_sample = chess_data.head(sample_size)
+        print(f"Using sample of {sample_size} games for testing")
+    else:
+        chess_data_sample = chess_data
+        print(f"Using all {len(chess_data_sample)} games")
+    
+    # Create a persistent pool to test pool reuse
+    num_workers = max(1, cpu_count() - 1)
+    print(f"Creating pool with {num_workers} workers...")
+    
+    with Pool(processes=num_workers) as pool:
+        # Warm up workers
+        warm_up_workers(pool, num_workers)
         
-        # Create a persistent pool to test pool reuse
-        num_workers = max(1, cpu_count() - 1)
-        print(f"Creating pool with {num_workers} workers...")
+        # Test the optimized processing
+        print("\nRunning optimized game processing...")
+        start_time = time.time()
         
-        with Pool(processes=num_workers) as pool:
-            # Warm up workers
-            warm_up_workers(pool, num_workers)
-            
-            # Test the optimized processing
-            print("\nRunning optimized game processing...")
-            start_time = time.time()
-            
-            corrupted_games = play_games(chess_data_sample, pool)
-            
-            end_time = time.time()
-            elapsed = end_time - start_time
-            
-            # Print results
-            print(f"\nResults:")
-            print(f"  Processed {len(chess_data_sample)} games")
-            print(f"  Found {len(corrupted_games)} corrupted games")
-            print(f"  Total time: {elapsed:.3f} seconds")
-            print(f"  Games per second: {len(chess_data_sample) / elapsed:.2f}")
-            
-            if 'PlyCount' in chess_data_sample.columns:
-                total_moves = chess_data_sample['PlyCount'].sum()
-                moves_per_second = total_moves / elapsed
-                print(f"  Total moves: {total_moves}")
-                print(f"  Moves per second: {moves_per_second:.2f}")
-            
-            # Print cache statistics
-            print(f"\nCache Statistics:")
-            Environ.print_cache_stats()
-            
-        print(f"\nTest completed successfully!")
-        print(f"If cache hit rate > 0%, the cache fix is working!")
-        print(f"Compare these numbers to your previous profiling results.")
+        corrupted_games = play_games(chess_data_sample, pool)
         
-    except Exception as e:
-        print(f"Error during testing: {e}")
-        print("Please check that all file paths are correct and dependencies are installed.")
-
+        end_time = time.time()
+        elapsed = end_time - start_time
+        
+        # Print results
+        print(f"\nResults:")
+        print(f"  Processed {len(chess_data_sample)} games")
+        print(f"  Found {len(corrupted_games)} corrupted games")
+        print(f"  Total time: {elapsed:.3f} seconds")
+        print(f"  Games per second: {len(chess_data_sample) / elapsed:.2f}")
+        
+        if 'PlyCount' in chess_data_sample.columns:
+            total_moves = chess_data_sample['PlyCount'].sum()
+            moves_per_second = total_moves / elapsed
+            print(f"  Total moves: {total_moves}")
+            print(f"  Moves per second: {moves_per_second:.2f}")
+        
+        # Print cache statistics
+        print(f"\nCache Statistics:")
+        Environ.print_cache_stats()
+        
+    print(f"\nTest completed successfully!")
+    print(f"If cache hit rate > 0%, the cache fix is working!")
+    print(f"Compare these numbers to your previous profiling results.")
+        
 def benchmark_methods():
     """Benchmark the old vs new methods to show performance difference."""
     print("\nBenchmarking method performance...")

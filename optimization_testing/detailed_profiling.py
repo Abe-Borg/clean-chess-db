@@ -13,7 +13,7 @@ from io import StringIO
 import matplotlib.pyplot as plt
 from agents.Agent import Agent
 from environment.Environ import Environ
-from training.game_simulation import handle_agent_turn, play_one_game
+from training.game_simulation import play_one_game
 from profiling_utils import get_system_info
 
 
