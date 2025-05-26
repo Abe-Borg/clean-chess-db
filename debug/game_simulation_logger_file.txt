@@ -1,0 +1,10 @@
+2025-05-26 16:01:04,778 - CRITICAL - Invalid move 'Qe2' for game Game 7, turn W6.
+2025-05-26 16:01:04,780 - CRITICAL - Invalid move 'Qe2' for game Game 8, turn W6.
+2025-05-26 16:01:04,781 - CRITICAL - Invalid move 'Qe2' for game Game 9, turn W6.
+2025-05-26 16:01:04,784 - CRITICAL - Invalid move 'Qe2' for game Game 4, turn W6.
+2025-05-26 16:01:04,785 - CRITICAL - Invalid move 'Qe2' for game Game 5, turn W6.
+2025-05-26 16:01:04,785 - CRITICAL - Invalid move 'Qe2' for game Game 3, turn W6.
+2025-05-26 16:01:04,787 - CRITICAL - Invalid move 'Qe2' for game Game 2, turn W6.
+2025-05-26 16:01:04,787 - CRITICAL - Invalid move 'Qe2' for game Game 1, turn W6.
+2025-05-26 16:01:04,787 - CRITICAL - Invalid move 'Qe2' for game Game 0, turn W6.
+2025-05-26 16:01:04,807 - CRITICAL - Invalid move 'Qe2' for game Game 6, turn W6.

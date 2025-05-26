@@ -6,12 +6,11 @@ Run this after updating your files to confirm performance improvements.
 
 import sys
 import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import time
 import pandas as pd
 from multiprocessing import Pool, cpu_count
-
-# Add your project directory to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils import game_settings
 
 # Import your updated modules
 from training.game_simulation import play_games, warm_up_workers
@@ -22,46 +21,12 @@ def test_small_sample():
     print("Testing Priority 1 optimizations...")
     print("=" * 50)
     
-    # Try to load a small sample of your data
     try:
-        # Try multiple possible data file locations
-        possible_paths = [
-            "chess_data/chess_games_part_1.pkl",
-            "utils/../chess_data/chess_games_part_1.pkl", 
-            "../chess_data/chess_games_part_1.pkl"
-        ]
-        
-        chess_data = None
-        for data_file in possible_paths:
-            if os.path.exists(data_file):
-                try:
-                    chess_data = pd.read_pickle(data_file)
-                    print(f"Loaded {len(chess_data)} games from {data_file}")
-                    break
-                except Exception as e:
-                    print(f"Failed to load {data_file}: {e}")
-                    continue
-        
-        if chess_data is None:
-            print("Could not load data file. Testing will use synthetic data...")
-            # Create synthetic test data
-            synthetic_games = []
-            for i in range(10):
-                game_data = {
-                    'PlyCount': 20 + i,
-                    'W1': 'e4', 'B1': 'e5', 'W2': 'Nf3', 'B2': 'Nc6',
-                    'W3': 'Bb5', 'B3': 'a6', 'W4': 'Ba4', 'B4': 'Nf6'
-                }
-                # Add more moves up to PlyCount
-                for j in range(5, (20 + i) // 2 + 1):
-                    game_data[f'W{j}'] = 'Qe2'  # Dummy moves
-                    if j * 2 <= 20 + i:
-                        game_data[f'B{j}'] = 'Qe7'
-                synthetic_games.append(game_data)
-            
-            chess_data = pd.DataFrame(synthetic_games, index=[f'Game {i}' for i in range(len(synthetic_games))])
-            print(f"Created {len(chess_data)} synthetic games for testing")
-        
+        chess_data = pd.read_pickle(game_settings.chess_games_filepath_part_1)
+        print(f"Loaded {len(chess_data)} games")
+    except Exception as e:
+        print(f"Failed to load chess data {e}")
+
         # Test with a small sample first
         sample_size = 100
         if len(chess_data) > sample_size:
