@@ -9,9 +9,8 @@ from environment.Environ import Environ
 from multiprocessing import Pool, cpu_count, shared_memory
 import logging
 import threading
-
 import platform
-import pickle
+import os
 
 # Determine if we're running on Windows
 IS_WINDOWS = platform.system() == 'Windows'
@@ -115,8 +114,118 @@ class AdaptiveChunker:
         
         return [chunk for chunk in chunks if chunk]
 
+class ImprovedAdaptiveChunker:
+    """Enhanced chunker with better algorithms and accurate time estimation."""
+
+    def __init__(self):
+        self.game_processing_times = {}
+        self.lock = threading.RLock()
+        self._historical_avg_moves_per_second = 100  # Default fallback
+
+    def update_processing_time(self, game_id: str, processing_time: float, num_moves: int):
+        """Update the processing time for a game."""
+        with self.lock:
+            self.game_processing_times[game_id] = {
+                'time': processing_time,
+                'moves': num_moves,
+                'moves_per_second': num_moves / processing_time if processing_time > 0 else 0
+            }
+            
+            # Update running average
+            if self.game_processing_times:
+                total_moves = sum(data['moves'] for data in self.game_processing_times.values())
+                total_time = sum(data['time'] for data in self.game_processing_times.values())
+                if total_time > 0:
+                    self._historical_avg_moves_per_second = total_moves / total_time
+
+    def estimate_processing_time(self, game_id: str, ply_count: int) -> float:
+        """Improved processing time estimation based on historical data."""
+        with self.lock:
+            # If we've seen this exact game before, use its actual time
+            if game_id in self.game_processing_times:
+                return self.game_processing_times[game_id]['time']
+            
+            # Use historical average if available
+            return ply_count / self._historical_avg_moves_per_second
+
+    def create_balanced_chunks(self, game_indices: List[str], 
+                              chess_data: pd.DataFrame, 
+                              num_processes: int,
+                              min_games_per_chunk: int = 200) -> List[List[str]]:
+        """Create balanced chunks with improved algorithm."""
+        # Handle edge cases
+        if not game_indices:
+            return []
+        
+        # Calculate optimal number of chunks
+        total_games = len(game_indices)
+        
+        # Don't create more chunks than we have workers OR games
+        # Ensure each chunk has at least min_games_per_chunk games (for efficiency)
+        max_chunks_by_workers = num_processes
+        max_chunks_by_min_size = max(1, total_games // min_games_per_chunk)
+        optimal_chunks = min(max_chunks_by_workers, max_chunks_by_min_size, total_games)
+        
+        print(f"Chunking decision:")
+        print(f"  Total games: {total_games}")
+        print(f"  Available workers: {num_processes}")
+        print(f"  Min games per chunk: {min_games_per_chunk}")
+        print(f"  Optimal chunks: {optimal_chunks}")
+        
+        # If we have very few games, assign one game per chunk
+        if total_games <= optimal_chunks:
+            chunks = [[game] for game in game_indices]
+            print(f"  Using 1 game per chunk strategy")
+            return chunks
+        
+        # Estimate processing time for each game
+        time_estimates = {}
+        total_estimated_time = 0
+        for game_id in game_indices:
+            try:
+                ply_count = chess_data.loc[game_id, 'PlyCount']
+                estimated_time = self.estimate_processing_time(game_id, ply_count)
+                time_estimates[game_id] = estimated_time
+                total_estimated_time += estimated_time
+            except (KeyError, TypeError):
+                # Default estimate for missing data
+                estimated_time = 0.3
+                time_estimates[game_id] = estimated_time
+                total_estimated_time += estimated_time
+        
+        # Sort games by estimated time (longest first for better balancing)
+        sorted_games = sorted(game_indices, key=lambda g: time_estimates.get(g, 0), reverse=True)
+        
+        # Create balanced chunks using greedy algorithm
+        chunks = [[] for _ in range(optimal_chunks)]
+        chunk_times = [0.0] * optimal_chunks
+        
+        for game in sorted_games:
+            # Assign to chunk with lowest total time
+            min_idx = chunk_times.index(min(chunk_times))
+            chunks[min_idx].append(game)
+            chunk_times[min_idx] += time_estimates.get(game, 0)
+        
+        # Calculate and print statistics
+        if chunks and total_estimated_time > 0:
+            avg_time = total_estimated_time / len(chunks)
+            max_time = max(chunk_times)
+            min_time = min(chunk_times)
+            imbalance = ((max_time - min_time) / avg_time * 100) if avg_time > 0 else 0
+            
+            print(f"Chunking statistics:")
+            print(f"  Chunks created: {len(chunks)}")
+            print(f"  Avg estimated time per chunk: {avg_time:.2f}s")
+            print(f"  Estimated imbalance: {imbalance:.1f}%")
+            print(f"  Games per chunk: {[len(c) for c in chunks]}")
+            print(f"  Time per chunk: {[f'{t:.1f}s' for t in chunk_times]}")
+        
+        return [chunk for chunk in chunks if chunk]  # Remove empty chunks
+
 # Create a single global instance
 adaptive_chunker = AdaptiveChunker()
+improved_adaptive_chunker = ImprovedAdaptiveChunker()
+
 
 def create_shared_data(chess_data: pd.DataFrame) -> Dict:
     """Create shared memory representation of DataFrame, with Windows compatibility."""
@@ -543,3 +652,92 @@ def warm_up_workers(pool, num_workers):
     results = pool.map(init_worker, range(num_workers))
     for result in results:
         print(result)
+
+
+def process_games_in_parallel_optimized(
+    game_indices: List[str],
+    worker_function: Callable[..., List],
+    shared_data: Dict,
+    chess_data: pd.DataFrame,
+    pool=None
+) -> List[str]:
+    """Optimized parallel processing with better chunking and pool management."""
+    # Handle the case when there are no games
+    if not game_indices:
+        return []
+
+    # Get available CPU count and ensure it's at least 1
+    num_processes = max(1, min(cpu_count(), len(game_indices)))
+    
+    # Set minimum games per chunk based on sample size
+    # Smaller chunks for small samples, larger for big samples
+    if len(game_indices) < 1000:
+        min_games_per_chunk = max(10, len(game_indices) // (num_processes * 2))
+    else:
+        min_games_per_chunk = 200  # Optimal based on your profiling
+
+    # Use improved chunking
+    chunks = improved_adaptive_chunker.create_balanced_chunks(
+        game_indices, chess_data, num_processes, min_games_per_chunk
+    )
+
+    # If chunking resulted in empty list, return empty result
+    if not chunks:
+        return []
+
+    # Always prefer provided pool to avoid creation overhead
+    if pool is not None:
+        print(f"Using provided persistent pool with {len(chunks)} chunks")
+        results = pool.starmap(worker_function, [(chunk, shared_data) for chunk in chunks])
+    else:
+        print(f"Creating new pool with {len(chunks)} workers")
+        with Pool(processes=len(chunks)) as new_pool:
+            results = new_pool.starmap(worker_function, [(chunk, shared_data) for chunk in chunks])
+
+    # Flatten results
+    corrupted_games_list = [game for sublist in results for game in sublist]
+    return corrupted_games_list
+
+def play_games_optimized(chess_data: pd.DataFrame, pool=None) -> List[str]:
+    """Optimized play_games with better pool management."""
+    # Handle empty DataFrame
+    if chess_data.empty:
+        return []
+
+    # Check that required columns exist
+    required_columns = ['PlyCount']
+    missing_columns = [col for col in required_columns if col not in chess_data.columns]
+    if missing_columns:
+        logger.critical(f"Missing required columns: {missing_columns}")
+        return list(chess_data.index)
+
+    start_time = time.time()
+    print(f"Starting processing of {len(chess_data)} games...")
+
+    # Create shared memory representation
+    shared_data = create_shared_data(chess_data)
+
+    try:
+        # Process games in parallel using optimized function
+        game_indices = list(chess_data.index)
+        corrupted_games = process_games_in_parallel_optimized(
+            game_indices, worker_play_games_optimized, shared_data, chess_data, pool)
+        
+        # Print timing information
+        end_time = time.time()
+        elapsed = end_time - start_time
+        games_per_second = len(chess_data) / elapsed
+        moves_per_second = chess_data['PlyCount'].sum() / elapsed
+        
+        print(f"\nProcessing completed:")
+        print(f"  Processed {len(chess_data)} games in {elapsed:.2f}s")
+        print(f"  Performance: {games_per_second:.2f} games/s, {moves_per_second:.2f} moves/s")
+        print(f"  Found {len(corrupted_games)} corrupted games")
+        
+        # Print cache statistics from Environ
+        Environ.print_cache_stats()
+        
+        return corrupted_games
+    finally:
+        # Always clean up shared memory
+        cleanup_shared_data(shared_data)
