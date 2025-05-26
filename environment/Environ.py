@@ -91,11 +91,6 @@ class Environ:
         state = {
             'turn_index': self.turn_index, 
             'curr_turn': curr_turn,
-            'white_to_move': self.board.turn == chess.WHITE,
-            'castling_rights': self.board.castling_rights,
-            'en_passant_square': self.board.ep_square,
-            'halfmove_clock': self.board.halfmove_clock,
-            'fullmove_number': self.board.fullmove_number
         }
         
         return state, legal_moves

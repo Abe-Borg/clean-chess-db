@@ -413,6 +413,225 @@ def worker_play_games(game_indices_chunk: List[str], shared_data: Dict) -> List[
     
     return corrupted_games
 
+def play_one_game_optimized(
+    game_number: str,
+    game_data: Dict[str, Any],
+    w_agent: Agent,
+    b_agent: Agent,
+    environ: Environ
+) -> Optional[str]:
+    """Process a single game with optimized data access and minimal string operations."""
+    num_moves = game_data['PlyCount']
+    game_moves = game_data['moves']
+
+    # Pre-convert all SAN moves to Move objects for faster processing
+    move_objects_cache = {}
+    
+    # Loop until we reach the number of moves or the game is over
+    while True:
+        # Use optimized state retrieval
+        curr_state, legal_moves = environ.get_curr_state_and_legal_moves()
+        
+        if curr_state['turn_index'] >= num_moves:
+            break
+        if environ.board.is_game_over():
+            break
+
+        result = handle_agent_turn_optimized(
+            w_agent, game_moves, curr_state, legal_moves, 
+            game_number, environ, move_objects_cache
+        )
+        if result is not None:
+            return result  # Return the game_number for a corrupted game
+
+        # Check state again after white's move
+        curr_state, legal_moves = environ.get_curr_state_and_legal_moves()
+        if curr_state['turn_index'] >= num_moves:
+            break
+        if environ.board.is_game_over():
+            break
+
+        result = handle_agent_turn_optimized(
+            b_agent, game_moves, curr_state, legal_moves,
+            game_number, environ, move_objects_cache
+        )
+        if result is not None:
+            return result  # Return the game_number for a corrupted game
+
+        if environ.board.is_game_over():
+            break
+            
+    return None  # Game processed normally
+
+def handle_agent_turn_optimized(
+    agent: Agent,
+    game_moves: Dict[str, str],
+    curr_state: dict,
+    legal_moves: List[chess.Move],
+    game_number: str,
+    environ: Environ,
+    move_objects_cache: Dict[str, chess.Move]
+) -> Optional[str]:
+    """Handle a single agent turn with optimized move processing."""
+    curr_turn = curr_state['curr_turn']
+
+    # Get move from game data (dictionary lookup)
+    chess_move_san = game_moves.get(curr_turn, '')
+
+    if chess_move_san == '' or pd.isna(chess_move_san):
+        return None
+
+    # Convert SAN to Move object (with caching)
+    if chess_move_san not in move_objects_cache:
+        try:
+            move_obj = environ.convert_san_to_move_object(chess_move_san)
+            move_objects_cache[chess_move_san] = move_obj
+        except ValueError:
+            logger.critical(f"Invalid move format '{chess_move_san}' for game {game_number}, turn {curr_turn}.")
+            return game_number
+    else:
+        move_obj = move_objects_cache[chess_move_san]
+
+    # Check if move is legal (compare Move objects directly - much faster than string comparison)
+    if move_obj not in legal_moves:
+        logger.critical(f"Invalid move '{chess_move_san}' for game {game_number}, turn {curr_turn}.")
+        return game_number
+
+    # Apply move directly as Move object (fastest method)
+    environ.push_move_object(move_obj)
+    return None
+
+def worker_play_games_optimized(game_indices_chunk: List[str], shared_data: Dict) -> List[str]:
+    """Optimized worker function that processes a chunk of games using shared data."""
+    corrupted_games = []
+
+    # Create agents and environment (reused across games)
+    w_agent = Agent('W')
+    b_agent = Agent('B')
+    environ = Environ()
+
+    # Handle Windows mode differently
+    if shared_data.get('windows_mode', False):
+        # For Windows, we have the DataFrame directly
+        chess_data = shared_data['data']
+        
+        # Process each game in the chunk
+        for game_number in game_indices_chunk:
+            try:
+                # Get data for this game
+                row = chess_data.loc[game_number]
+                ply_count = int(row['PlyCount'])
+                
+                # Extract moves from row
+                moves = {}
+                for col in chess_data.columns:
+                    if col != 'PlyCount':
+                        moves[col] = row[col]
+                
+                # Store in game data dictionary
+                game_data = {
+                    'PlyCount': ply_count,
+                    'moves': moves
+                }
+                
+                # Process the game with timing using optimized function
+                start_time = time.time()
+                try:
+                    result = play_one_game_optimized(game_number, game_data, w_agent, b_agent, environ)
+                except Exception as e:
+                    logger.critical(f"Exception processing game {game_number}: {e}")
+                    result = game_number  # flag as corrupted
+                    
+                if result is not None:
+                    corrupted_games.append(game_number)
+                    
+                # Reset environment for next game
+                environ.reset_environ()
+                
+                # Update processing time statistics
+                end_time = time.time()
+                processing_time = end_time - start_time
+                adaptive_chunker.update_processing_time(game_number, processing_time, ply_count)
+                
+            except (KeyError, ValueError) as e:
+                # Game not found or other error
+                logger.critical(f"Error accessing game {game_number}: {e}")
+                corrupted_games.append(game_number)
+                
+        return corrupted_games
+        
+    # Regular shared memory approach for non-Windows systems
+    # Access shared memory for game indices
+    indices_shm = shared_memory.SharedMemory(name=shared_data['indices']['shm_name'])
+    indices_shape = tuple(shared_data['indices']['shape'])
+    indices_dtype = np.dtype(shared_data['indices']['dtype'])
+    game_indices_arr = np.ndarray(indices_shape, dtype=indices_dtype, buffer=indices_shm.buf)
+    game_indices_list = game_indices_arr.tolist()
+
+    # Access shared memory for ply counts
+    ply_shm = shared_memory.SharedMemory(name=shared_data['ply_counts']['shm_name'])
+    ply_shape = tuple(shared_data['ply_counts']['shape'])
+    ply_dtype = np.dtype(shared_data['ply_counts']['dtype'])
+    ply_counts = np.ndarray(ply_shape, dtype=ply_dtype, buffer=ply_shm.buf)
+
+    # Access shared memory for move columns
+    move_columns = {}
+    move_shms = {}  # Keep references to shared memory objects
+    for col, col_info in shared_data['move_columns'].items():
+        shm = shared_memory.SharedMemory(name=col_info['shm_name'])
+        move_shms[col] = shm  # Store reference to keep alive
+        col_shape = tuple(col_info['shape'])
+        col_dtype = np.dtype(col_info['dtype'])
+        move_columns[col] = np.ndarray(col_shape, dtype=col_dtype, buffer=shm.buf)
+
+    # Process each game in the chunk
+    for game_number in game_indices_chunk:
+        # Find index in the original array
+        try:
+            idx = game_indices_list.index(game_number)
+            
+            # Get data for this game
+            ply_count = int(ply_counts[idx])
+            moves = {col: move_columns[col][idx] for col in move_columns}
+            
+            # Store in game data dictionary
+            game_data = {
+                'PlyCount': ply_count,
+                'moves': moves
+            }
+            
+            # Process the game with timing using optimized function
+            start_time = time.time()
+            try:
+                result = play_one_game_optimized(game_number, game_data, w_agent, b_agent, environ)
+            except Exception as e:
+                logger.critical(f"Exception processing game {game_number}: {e}")
+                result = game_number  # flag as corrupted
+                
+            if result is not None:
+                corrupted_games.append(game_number)
+                
+            # Reset environment for next game
+            environ.reset_environ()
+            
+            # Update processing time statistics
+            end_time = time.time()
+            processing_time = end_time - start_time
+            adaptive_chunker.update_processing_time(game_number, processing_time, ply_count)
+            
+        except ValueError:
+            # Game not found in indices
+            logger.critical(f"Game {game_number} not found in indices")
+            corrupted_games.append(game_number)
+
+    # Clean up shared memory access
+    indices_shm.close()
+    ply_shm.close()
+    for shm in move_shms.values():
+        shm.close()
+
+    return corrupted_games
+
 def play_one_game(
     game_number: str, 
     game_data: Dict[str, Any], 
