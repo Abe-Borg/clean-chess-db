@@ -3,20 +3,21 @@
 """
 Test the corruption fix.
 """
-
 import sys
 import os
 import pandas as pd
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils import game_settings
+
 def test_corruption_fix():
     """Test that the fix resolves the corruption issue."""
     print("Testing Corruption Fix")
     print("=" * 50)
     
-    filepath = game_settings.chess_games_filepath_part_1
+    filepath = game_settings.chess_games_filepath_part_50
     try:
         chess_data = pd.read_pickle(filepath, compression='zip')
+        chess_data = chess_data.sample(10_000)
         print(f"Loaded {len(chess_data)} games from {filepath}")
     except FileNotFoundError as e:
         print(f"Failed to load chess data {e}")
@@ -61,7 +62,6 @@ def test_corruption_fix():
             result = play_one_game_optimized(game_id, game_data, w_agent, b_agent, environ)
             if result is None:
                 successful_count += 1
-                print(f"  {game_id}: ✅ SUCCESS")
             else:
                 corrupted_count += 1
                 print(f"  {game_id}: ❌ CORRUPTED")
