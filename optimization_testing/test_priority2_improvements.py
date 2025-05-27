@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+# file: optimization_testing/test_priorty2_improvements.py
+
 """
 Test script for Priority 2 improvements: Pool Management & Chunking
 """

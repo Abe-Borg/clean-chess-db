@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+# file: optimization_testing/test_optimization_performance.py
+
 """
 Test script to verify Priority 1 optimizations are working correctly.
 Run this after updating your files to confirm performance improvements.

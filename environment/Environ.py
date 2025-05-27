@@ -1,7 +1,8 @@
+# file: environment/Environ.py
+
 import chess
 from utils import constants
 from typing import Union, Dict, List, Tuple
-import functools
 import threading
 
 class Environ:

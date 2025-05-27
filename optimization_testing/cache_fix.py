@@ -1,10 +1,12 @@
+# file: optimization_testing/cache_fix.py
+
 """
 Debug script to fix the position cache issue.
 The cache shows 0 hits/0 misses, which means it's not being used at all.
 """
 
 import chess
-from typing import List, Dict
+from typing import List
 import threading
 
 class FixedEnviron:

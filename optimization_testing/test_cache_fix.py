@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+# file: optimization_testing/test_cache_fix.py
+
 """
 Test script to identify and fix the position cache issue.
 """

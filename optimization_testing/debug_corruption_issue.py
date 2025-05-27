@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+# file: optimization_testing/debug_corruption_issue.py
+
 """
 Debug the high corruption rate issue.
 96-97% corruption rate suggests a systematic problem.

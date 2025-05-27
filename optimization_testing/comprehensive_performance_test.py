@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+# file: optimization_testing/comprehensive_performance_test.py
+
 """
 Comprehensive test using real data to measure all optimizations.
 This will give us the true performance improvement from baseline.

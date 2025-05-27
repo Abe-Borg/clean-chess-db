@@ -1,4 +1,6 @@
-from typing import Union, Dict, List, Any
+# file: agents/Agent.py
+
+from typing import Union, Dict, List
 import chess
 
 class Agent:

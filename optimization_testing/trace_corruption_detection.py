@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+# file: optimization_testing/trace_corruption_detection.py
+
 """
 Trace through the corruption detection logic to find the exact issue.
 """
