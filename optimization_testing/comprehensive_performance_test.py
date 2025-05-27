@@ -126,36 +126,31 @@ def test_time_estimation_accuracy():
     print(f"{'='*60}")
     
     # Import the final optimized chunker
+    from training.game_simulation import final_optimized_chunker
+        
+    filepath = game_settings.chess_games_filepath_part_1
     try:
-        from training.game_simulation import final_optimized_chunker
+        chess_data = pd.read_pickle(filepath, compression='zip')
+        chess_data - chess_data.head(10_000)
+        print(f"Loaded {len(chess_data)} games from {filepath}")
+    except FileNotFoundError as e:
+        print(f"Failed to load chess data {e}")
+    
+    if chess_data is None:
+        print("ERROR: Could not load real data. Please update the file paths.")
+        return
         
-        # Load small sample for testing
-        possible_paths = [
-            "chess_data/chess_games_part_1.pkl",
-            "utils/../chess_data/chess_games_part_1.pkl", 
-            "../chess_data/chess_games_part_1.pkl"
-        ]
+    if chess_data is not None:
+        game_indices = list(chess_data.index)
         
-        chess_data = None
-        for path in possible_paths:
-            if os.path.exists(path):
-                chess_data = pd.read_pickle(path).head(1000)  # Small sample
-                break
+        # Test chunking with realistic estimation
+        print("Creating chunks with optimized estimator...")
+        chunks = final_optimized_chunker.create_balanced_chunks(
+            game_indices, chess_data, cpu_count()
+        )
         
-        if chess_data is not None:
-            game_indices = list(chess_data.index)
-            
-            # Test chunking with realistic estimation
-            print("Creating chunks with optimized estimator...")
-            chunks = final_optimized_chunker.create_balanced_chunks(
-                game_indices, chess_data, cpu_count()
-            )
-            
-            print(f"Created {len(chunks)} chunks")
-            print("Time estimation should now be realistic (not 40x overestimate)")
-            
-    except ImportError:
-        print("Final optimized chunker not available yet")
+        print(f"Created {len(chunks)} chunks")
+        print("Time estimation should now be realistic (not 40x overestimate)")
 
 if __name__ == "__main__":
     test_all_optimizations_with_real_data()
