@@ -74,8 +74,6 @@ def main():
                 part_start_time = time.time()
                 chess_data = pd.read_pickle(file_path, compression='zip')
                 
-                chess_data = chess_data.head(1000) # small smaple for testing
-
                 print(f"\nPart {part}: Loaded {len(chess_data)} games")
                 
                 # Process games
