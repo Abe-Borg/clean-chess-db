@@ -1,42 +1,30 @@
 # file: agents/Agent.py
 
-from typing import Union, Dict, List
-import chess
+from typing import Dict
 
 class Agent:
+    """Chess agent that selects moves based on game data."""
+    
     def __init__(self, color: str):
+        """
+        Initialize agent with a color.
+        
+        Args:
+            color: 'W' for white or 'B' for black
+        """
         self.color = color
 
-    def choose_action(self, game_moves: Dict[str, str], environ_state: Dict[str, Union[int, str, List[str]]], curr_game: str = 'Game 1') -> str:
-        """Choose an action based on the current game state.        
-        Args:
-            game_moves: Dictionary containing moves for the current game
-            environ_state: Current state of the environment
-            curr_game: Identifier for the current game
-        Returns:
-            The chosen move in SAN format
+    def choose_action(self, game_moves: Dict[str, str], curr_turn: str) -> str:
         """
-        curr_turn = environ_state.get("curr_turn", "")
-        legal_moves = environ_state.get('legal_moves', [])
+        Choose an action based on the current game data.
         
-        if not legal_moves:
-            return ''
-        return game_moves.get(curr_turn, '')
-    
-    def choose_action_optimized(self, game_moves: Dict[str, str], curr_state: Dict[str, Union[int, str]], 
-                               legal_moves: List[chess.Move], curr_game: str = 'Game 1') -> str:
-        """Optimized action selection that works with Move objects.
+        This is a simple replay agent that returns the move from the game data.
         
         Args:
             game_moves: Dictionary containing moves for the current game
-            curr_state: Current state of the environment (without expensive legal_moves list)
-            legal_moves: Pre-computed legal moves as Move objects
-            curr_game: Identifier for the current game
+            curr_turn: Current turn identifier (e.g., 'W1', 'B1')
+            
         Returns:
-            The chosen move in SAN format
+            The move in SAN format from the game data, or empty string if not found
         """
-        curr_turn = curr_state.get("curr_turn", "")
-        
-        if not legal_moves:
-            return ''
         return game_moves.get(curr_turn, '')
