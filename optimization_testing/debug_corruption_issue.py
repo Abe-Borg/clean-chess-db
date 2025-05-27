@@ -8,27 +8,23 @@ import sys
 import os
 import pandas as pd
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils import game_settings
 
 def debug_corruption_issue():
     """Debug why 96-97% of games are being flagged as corrupted."""
     print("Debugging High Corruption Rate")
     print("=" * 50)
     
-    # Load a small sample to debug
-    possible_paths = [
-        "chess_data/chess_games_part_1.pkl",
-        "utils/../chess_data/chess_games_part_1.pkl",
-        "../chess_data/chess_games_part_1.pkl"
-    ]
-    
-    chess_data = None
-    for path in possible_paths:
-        if os.path.exists(path):
-            chess_data = pd.read_pickle(path).head(10)  # Just 10 games
-            break
+    filepath = game_settings.chess_games_filepath_part_1
+    try:
+        chess_data = pd.read_pickle(filepath, compression='zip')
+        chess_data = chess_data.head(10)
+        print(f"Loaded {len(chess_data)} games from {filepath}")
+    except FileNotFoundError as e:
+        print(f"Failed to load chess data {e}")
     
     if chess_data is None:
-        print("Could not load data")
+        print("ERROR: Could not load real data. Please update the file paths.")
         return
     
     print(f"Loaded {len(chess_data)} games for debugging")
@@ -122,21 +118,16 @@ def check_data_format():
     print(f"\nChecking Data Format Compatibility")
     print("=" * 50)
     
-    # Load data
-    possible_paths = [
-        "chess_data/chess_games_part_1.pkl",
-        "utils/../chess_data/chess_games_part_1.pkl",
-        "../chess_data/chess_games_part_1.pkl"
-    ]
-    
-    chess_data = None
-    for path in possible_paths:
-        if os.path.exists(path):
-            chess_data = pd.read_pickle(path)
-            break
+    filepath = game_settings.chess_games_filepath_part_1
+    try:
+        chess_data = pd.read_pickle(filepath, compression='zip')
+        chess_data = chess_data.head(10)
+        print(f"Loaded {len(chess_data)} games from {filepath}")
+    except FileNotFoundError as e:
+        print(f"Failed to load chess data {e}")
     
     if chess_data is None:
-        print("Could not load data")
+        print("ERROR: Could not load real data. Please update the file paths.")
         return
     
     print(f"Total games: {len(chess_data)}")
