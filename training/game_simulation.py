@@ -553,9 +553,6 @@ def play_one_game_optimized(
     num_moves = game_data['PlyCount']
     game_moves = game_data['moves']
 
-    # Pre-convert all SAN moves to Move objects for faster processing
-    move_objects_cache = {}
-    
     # Loop until we reach the number of moves or the game is over
     while True:
         # Use optimized state retrieval
@@ -568,7 +565,7 @@ def play_one_game_optimized(
 
         result = handle_agent_turn_optimized(
             w_agent, game_moves, curr_state, legal_moves, 
-            game_number, environ, move_objects_cache
+            game_number, environ
         )
         if result is not None:
             return result  # Return the game_number for a corrupted game
@@ -582,7 +579,7 @@ def play_one_game_optimized(
 
         result = handle_agent_turn_optimized(
             b_agent, game_moves, curr_state, legal_moves,
-            game_number, environ, move_objects_cache
+            game_number, environ
         )
         if result is not None:
             return result  # Return the game_number for a corrupted game
@@ -598,8 +595,7 @@ def handle_agent_turn_optimized(
     curr_state: dict,
     legal_moves: List[chess.Move],
     game_number: str,
-    environ: Environ,
-    move_objects_cache: Dict[str, chess.Move]
+    environ: Environ
 ) -> Optional[str]:
     """Handle a single agent turn with optimized move processing."""
     curr_turn = curr_state['curr_turn']
@@ -609,17 +605,12 @@ def handle_agent_turn_optimized(
 
     if chess_move_san == '' or pd.isna(chess_move_san):
         return None
-
-    # Convert SAN to Move object (with caching)
-    if chess_move_san not in move_objects_cache:
-        try:
+    
+    try:
             move_obj = environ.convert_san_to_move_object(chess_move_san)
-            move_objects_cache[chess_move_san] = move_obj
-        except ValueError:
-            logger.critical(f"Invalid move format '{chess_move_san}' for game {game_number}, turn {curr_turn}.")
-            return game_number
-    else:
-        move_obj = move_objects_cache[chess_move_san]
+    except ValueError:
+        logger.critical(f"Invalid move format '{chess_move_san}' for game {game_number}, turn {curr_turn}.")
+        return game_number
 
     # Check if move is legal (compare Move objects directly - much faster than string comparison)
     if move_obj not in legal_moves:
