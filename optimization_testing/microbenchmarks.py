@@ -269,7 +269,7 @@ class MicroBenchmark:
         chunker = AdaptiveChunker()
         
         # Test with different game counts and worker counts
-        game_counts = [100, 1000, 10000]
+        game_counts = [100, 1000, 10_000]
         worker_counts = [4, 8, 16]
         
         for game_count in game_counts:
@@ -406,7 +406,7 @@ class MicroBenchmark:
         return results_dict
 
 
-def run_microbenchmarks(filepath: str, sample_size: int = 10000):
+def run_microbenchmarks(filepath: str, sample_size: int = 10_000):
     """Run micro-benchmarks on chess database."""
     # Load data
     print(f"Loading data from {filepath}...")

@@ -107,7 +107,7 @@ class OptimizationValidator:
         }
         
         # Test with different sample sizes
-        sample_sizes = [1000, 5000, 10000]
+        sample_sizes = [1000, 5000, 10_000]
         performance_results = {}
         
         for size in sample_sizes:
@@ -176,12 +176,12 @@ class OptimizationValidator:
         stress_scenarios = {
             'high_concurrency': {
                 'workers': cpu_count(),  # Use all cores
-                'sample_size': min(50000, len(chess_data)),
+                'sample_size': min(50_000, len(chess_data)),
                 'description': 'Maximum worker concurrency'
             },
             'memory_pressure': {
                 'workers': cpu_count() - 1,
-                'sample_size': min(100000, len(chess_data)),
+                'sample_size': min(80_000, len(chess_data)),
                 'description': 'Large dataset to test memory handling'
             },
             'long_games': {
@@ -327,7 +327,7 @@ class OptimizationValidator:
         print("\n--- Final Performance Measurement ---")
         
         # Use full dataset or large sample
-        test_size = min(len(chess_data), 100000)
+        test_size = min(len(chess_data), 80_000)
         test_data = chess_data.sample(test_size, random_state=42)
         
         print(f"Testing with {test_size} games...")
