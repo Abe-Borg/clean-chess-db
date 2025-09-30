@@ -75,10 +75,9 @@ class AdaptiveChunker:
         time_estimates = {}
         for game_id in game_indices:
             try:
-                ply_count = chess_data.loc[game_id, 'PlyCount']
-                # Simple time estimate based on move count
+                ply_count = int(chess_data.loc[game_id, 'PlyCount'])  # type: ignore
                 time_estimates[game_id] = ply_count / self.calibrated_moves_per_second
-            except (KeyError, TypeError):
+            except (KeyError, TypeError, ValueError):
                 time_estimates[game_id] = 0.001  # Default estimate
         
         # Sort games by estimated time (longest first for better balancing)
