@@ -97,13 +97,3 @@ class Environ:
         """
         return self.board.parse_san(san_move)
 
-        """
-        Legacy method - get the current state with SAN conversion.
-        Use get_curr_state_and_legal_moves() for better performance.
-        
-        Returns:
-            Dictionary with turn info and legal moves in SAN format
-        """
-        curr_turn = self.turn_list[self.turn_index]
-        legal_moves = self.get_legal_moves()
-        return {'turn_index': self.turn_index, 'curr_turn': curr_turn, 'legal_moves': legal_moves}
