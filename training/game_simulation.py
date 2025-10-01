@@ -388,14 +388,16 @@ def play_one_game(game_id: str,
         curr_state, legal_moves = environ.get_curr_state_and_legal_moves()
         
         # Check termination conditions
-        if curr_state['turn_index'] >= ply_count:
+        turn_index: int = curr_state['turn_index'] # type: ignore
+        if turn_index >= ply_count:
             break
         if environ.board.is_game_over():
             break
         
         # Determine which agent's turn
-        curr_turn = curr_state['curr_turn']
-        agent = w_agent if curr_state['white_to_move'] else b_agent
+        curr_turn: str = curr_state['curr_turn'] # type: ignore
+        white_to_move: bool = curr_state['white_to_move'] # type: ignore
+        agent = w_agent if white_to_move else b_agent
         
         # Get move from game data
         chess_move_san = agent.choose_action(moves, curr_turn)
