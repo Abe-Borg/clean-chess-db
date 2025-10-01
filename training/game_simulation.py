@@ -136,9 +136,9 @@ def create_shared_data(chess_data: pd.DataFrame) -> Dict:
         
         # Create shared memory for PlyCount
         ply_counts = chess_data['PlyCount'].values
+        ply_counts = np.asarray(ply_counts, dtype=np.int64)  # Ensure standard numpy dtype
         ply_shm = shared_memory.SharedMemory(create=True, size=ply_counts.nbytes)
-        ply_shared = np.ndarray(ply_counts.shape, dtype=ply_counts.dtype, 
-                               buffer=ply_shm.buf)
+        ply_shared = np.ndarray(ply_counts.shape, dtype=ply_counts.dtype, buffer=ply_shm.buf)
         ply_shared[:] = ply_counts[:]
         
         # Create shared memory for move columns
@@ -146,16 +146,17 @@ def create_shared_data(chess_data: pd.DataFrame) -> Dict:
         for col in chess_data.columns:
             if col != 'PlyCount':
                 col_data = chess_data[col].values
+                col_data = np.asarray(col_data, dtype=object)  # Ensure standard numpy dtype (strings are object type)
                 col_shm = shared_memory.SharedMemory(create=True, size=col_data.nbytes)
-                col_shared = np.ndarray(col_data.shape, dtype=col_data.dtype, 
-                                       buffer=col_shm.buf)
-                col_shared[:] = col_data[:]
-                
-                move_columns[col] = {
-                    'shm_name': col_shm.name,
-                    'shape': col_data.shape,
-                    'dtype': str(col_data.dtype)
-                }
+        col_shared = np.ndarray(col_data.shape, dtype=col_data.dtype, 
+                               buffer=col_shm.buf)
+        col_shared[:] = col_data[:]
+        
+        move_columns[col] = {
+            'shm_name': col_shm.name,
+            'shape': col_data.shape,
+            'dtype': str(col_data.dtype)
+        }
         
         return {
             'windows_mode': False,
