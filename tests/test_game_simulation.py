@@ -408,7 +408,7 @@ class TestGameSimulation:
         moves['B16'] = 'Bb7'
         moves['W17'] = 'Ng4'
         moves['B17'] = 'Rac8'
-        moves['W18'] = 'Ne3'
+        moves['W18'] = 'Nfe3'
         moves['B18'] = 'Rfe8'
         moves['W19'] = 'Bd2'
         moves['B19'] = 'Nf8'
