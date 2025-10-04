@@ -54,7 +54,7 @@ def main():
     start_time = time.time()
     
     # Configuration
-    num_dataframes_to_process = 1
+    num_dataframes_to_process = 10
     total_games_processed = 0
     total_corrupted_games = 0
     

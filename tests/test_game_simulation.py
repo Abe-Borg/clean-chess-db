@@ -422,7 +422,7 @@ class TestGameSimulation:
         moves['B23'] = 'Bf8'
         moves['W24'] = 'Rac1'
         moves['B24'] = 'g6'
-        moves['W25'] = 'Nh6+'
+        moves['W25'] = 'Nfh6+'
         
         result = play_one_game(
             game_id='LongGame',
