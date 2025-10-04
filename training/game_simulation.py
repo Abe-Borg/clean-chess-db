@@ -148,15 +148,14 @@ def create_shared_data(chess_data: pd.DataFrame) -> Dict:
                 col_data = chess_data[col].values
                 col_data = np.asarray(col_data, dtype=object)  # Ensure standard numpy dtype (strings are object type)
                 col_shm = shared_memory.SharedMemory(create=True, size=col_data.nbytes)
-        col_shared = np.ndarray(col_data.shape, dtype=col_data.dtype, 
-                               buffer=col_shm.buf)
-        col_shared[:] = col_data[:]
+                col_shared = np.ndarray(col_data.shape, dtype=col_data.dtype, buffer=col_shm.buf)
+                col_shared[:] = col_data[:]
         
-        move_columns[col] = {
-            'shm_name': col_shm.name,
-            'shape': col_data.shape,
-            'dtype': str(col_data.dtype)
-        }
+                move_columns[col] = {
+                    'shm_name': col_shm.name,
+                    'shape': col_data.shape,
+                    'dtype': str(col_data.dtype)
+                }
         
         return {
             'windows_mode': False,
@@ -404,8 +403,8 @@ def play_one_game(game_id: str,
         
         # Handle empty moves
         if chess_move_san == '' or pd.isna(chess_move_san):
-            environ.update_curr_state()
-            continue
+            logger.critical(f"Empty move for game {game_id}, turn {curr_turn}")
+            return game_id
         
         # Convert and validate move
         try:
