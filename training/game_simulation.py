@@ -409,9 +409,9 @@ def play_one_game(game_id: str,
         # Convert and validate move
         try:
             move_obj = environ.convert_san_to_move_object(chess_move_san)
-        except ValueError:
+        except Exception as e:
             logger.critical(f"Invalid move format '{chess_move_san}' "
-                          f"for game {game_id}, turn {curr_turn}")
+                          f"for game {game_id}, turn {curr_turn}: {e}")
             return game_id
         
         # Check if move is legal
