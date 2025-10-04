@@ -1,0 +1,13 @@
+2025-10-03 20:24:21,390 - CRITICAL - Invalid move format 'e5' for game IllegalMove, turn W1
+2025-10-03 20:24:21,392 - CRITICAL - Invalid move format 'XYZ123' for game InvalidSAN, turn B1
+2025-10-03 20:24:21,393 - CRITICAL - Invalid move format 'Bd5' for game WrongPiece, turn W3
+2025-10-03 20:24:21,394 - CRITICAL - Empty move for game EmptyMiddle, turn W2
+2025-10-03 20:24:22,559 - CRITICAL - Invalid move format 'e5' for game Bad1, turn W1
+2025-10-03 20:24:22,560 - CRITICAL - Invalid move format 'XYZ' for game Bad2, turn W1
+2025-10-03 20:24:22,560 - CRITICAL - Empty move for game Bad3, turn B1
+2025-10-03 20:24:23,138 - CRITICAL - Empty move for game Bad2, turn B1
+2025-10-03 20:24:23,138 - CRITICAL - Invalid move format 'e5' for game Bad1, turn W1
+2025-10-03 20:24:23,142 - CRITICAL - Missing required column: PlyCount
+2025-10-03 20:24:23,146 - CRITICAL - Invalid move format 'Ne3' for game LongGame, turn W18
+2025-10-03 20:24:23,164 - CRITICAL - Empty move for game TooFewMoves, turn W3
+2025-10-03 20:24:23,175 - CRITICAL - Empty move for game MissingKeys, turn B2

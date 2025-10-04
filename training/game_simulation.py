@@ -401,9 +401,9 @@ def play_one_game(game_id: str,
         # Get move from game data
         chess_move_san = agent.choose_action(moves, curr_turn)
         
-        # Handle empty moves
-        if chess_move_san == '' or pd.isna(chess_move_san):
-            logger.critical(f"Empty move for game {game_id}, turn {curr_turn}")
+        # Handle empty moves - these indicate corruption
+        if pd.isna(chess_move_san) or chess_move_san == '':
+            logger.critical(f"Empty move found for game {game_id}, turn {curr_turn}")
             return game_id
         
         # Convert and validate move

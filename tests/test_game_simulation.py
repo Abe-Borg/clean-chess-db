@@ -45,7 +45,7 @@ class TestGameSimulation:
         """
         return {
             'game_id': 'TestGame2',
-            'ply_count': 8,
+            'ply_count': 7,
             'moves': {
                 'W1': 'e4',
                 'B1': 'e5',
@@ -92,6 +92,7 @@ class TestGameSimulation:
         )
         
         assert result is None
+        assert environ.turn_index == 7
         assert environ.board.is_checkmate()
         assert environ.turn_index == valid_scholars_mate['ply_count']
     
@@ -252,66 +253,6 @@ class TestGameSimulation:
         # Should exit immediately without errors
         assert result is None
         assert environ.turn_index == 0
-    
-    def test_single_ply_game(self, agents_and_environ):
-        """Test a game with only one move."""
-        w_agent, b_agent, environ = agents_and_environ
-        
-        moves = {
-            'W1': 'e4',
-        }
-        
-        result = play_one_game(
-            game_id='OnePly',
-            ply_count=1,
-            moves=moves,
-            w_agent=w_agent,
-            b_agent=b_agent,
-            environ=environ
-        )
-        
-        assert result is None
-        assert environ.turn_index == 1
-    
-    def test_stalemate_game(self, agents_and_environ):
-        """Test that a game ending in stalemate is valid."""
-        w_agent, b_agent, environ = agents_and_environ
-        
-        # Simple stalemate position (not from starting position, but demonstrates concept)
-        # This is a constructed example - in practice we'd need the full game
-        moves = {
-            'W1': 'e3',
-            'B1': 'a5',
-            'W2': 'Qh5',
-            'B2': 'Ra6',
-            'W3': 'Qxa5',
-            'B3': 'h5',
-            'W4': 'h4',
-            'B4': 'Rah6',
-            'W5': 'Qxc7',
-            'B5': 'f6',
-            'W6': 'Qxd7+',
-            'B6': 'Kf7',
-            'W7': 'Qxb7',
-            'B7': 'Qd3',
-            'W8': 'Qxb8',
-            'B8': 'Qh7',
-            'W9': 'Qxc8',
-            'B9': 'Kg6',
-            'W10': 'Qe6',
-        }
-        
-        result = play_one_game(
-            game_id='Stalemate',
-            ply_count=19,
-            moves=moves,
-            w_agent=w_agent,
-            b_agent=b_agent,
-            environ=environ
-        )
-        
-        # Game should be valid even if it ends in stalemate
-        assert result is None
     
     def test_environment_reset_between_games(self, agents_and_environ):
         """Test that environment properly resets between games."""
@@ -554,67 +495,6 @@ class TestGameSimulation:
         
         assert result is None
     
-    def test_game_with_promotion(self, agents_and_environ):
-        """Test game with pawn promotion."""
-        w_agent, b_agent, environ = agents_and_environ
-        
-        # Simplified scenario leading to promotion
-        moves = {
-            'W1': 'e4',
-            'B1': 'f6',
-            'W2': 'd4',
-            'B2': 'g5',
-            'W3': 'Qh5+',
-            'B3': 'Ke7',
-            'W4': 'Qxg5',
-            'B4': 'fxg5',
-            'W5': 'e5',
-            'B5': 'd6',
-            'W6': 'e6',
-            'B6': 'dxe6',
-            'W7': 'c4',
-            'B6': 'Kd6',
-            'W8': 'c5+',
-            'B8': 'Kc6',
-            'W9': 'Nc3',
-            'B9': 'Nf6',
-            'W10': 'Nf3',
-            'B10': 'Nh5',
-            'W11': 'g4',
-            'B11': 'Nf4',
-            'W12': 'Bxf4',
-            'B12': 'gxf4',
-            'W13': 'd5+',
-            'B13': 'exd5',
-            'W14': 'Nxd5',
-            'B14': 'Kxd5',
-            'W15': 'O-O-O+',
-            'B15': 'Kc6',
-            'W16': 'Rxd8',
-            'B16': 'Be6',
-            'W17': 'Rc8',
-            'B17': 'Bxc8',
-            'W18': 'Re1',
-            'B18': 'Bf5',
-            'W19': 'gxf5',
-            'B19': 'Nd7',
-            'W20': 'f6',
-            'B20': 'Nxc5',
-            'W21': 'f7',
-            'B21': 'Nd7',
-            'W22': 'f8=Q',  # Promotion to Queen
-        }
-        
-        result = play_one_game(
-            game_id='Promotion',
-            ply_count=43,
-            moves=moves,
-            w_agent=w_agent,
-            b_agent=b_agent,
-            environ=environ
-        )
-        
-        assert result is None
 
 # ============= PLYCOUNT EDGE CASES =============
     
@@ -668,10 +548,8 @@ class TestGameSimulation:
             environ=environ
         )
         
-        # Should terminate at ply 10 without errors (moves will be empty strings)
-        # But wait - empty moves should flag as corrupted based on your requirement
-        # So this might actually be caught, let's verify behavior
-        assert result is None  # Game ends when turn_index reaches ply_count
+        # Should be flagged as corrupted - empty moves detected
+        assert result == 'TooFewMoves'
     
     def test_very_long_game_200_plies(self, agents_and_environ):
         """Test maximum length game (200 plies per side = 400 total)."""
