@@ -599,3 +599,126 @@ class TestGameSimulation:
         # Missing move returns empty string, which should flag as corrupted
         assert result == 'MissingKeys'
 
+    # ============== 
+
+    def test_promotion_by_capture_and_check(self, agents_and_environ):
+        """
+        White promotes by capture (bxa8=Q), then Black promotes with check (gxf1=Q+).
+        Sequence is legal from the initial position.
+        """
+        from training.game_simulation import play_one_game
+        w_agent, b_agent, environ = agents_and_environ
+
+        moves = {
+            'W1': 'a4',
+            'B1': 'h5',
+            'W2': 'a5',
+            'B2': 'h4',
+            'W3': 'a6',
+            'B3': 'h3',
+            'W4': 'axb7',     # a6xb7
+            'B4': 'hxg2',     # h3xg2
+            'W5': 'bxa8=Q',   # b7xa8=Q
+            'B5': 'gxf1=Q+',  # g2xf1=Q+
+        }
+
+        result = play_one_game(
+            game_id='PromotionBothSides',
+            ply_count=10,        # exactly the number of plies we supply
+            moves=moves,
+            w_agent=w_agent,
+            b_agent=b_agent,
+            environ=environ
+        )
+
+        assert result is None
+        assert environ.turn_index == 10  # all provided plies consumed
+
+    def test_en_passant(self, agents_and_environ):
+        """
+        Classic en passant: 1.e4 d5 2.exd5 c5 3.dxc6 (e.p.)
+        Note: SAN usually omits the 'e.p.' suffix; python-chess accepts 'dxc6'.
+        """
+        from training.game_simulation import play_one_game
+        w_agent, b_agent, environ = agents_and_environ
+
+        moves = {
+            'W1': 'e4',
+            'B1': 'd5',
+            'W2': 'exd5',
+            'B2': 'c5',       # two-square pawn push enabling en passant
+            'W3': 'dxc6',     # en passant capture
+        }
+
+        result = play_one_game(
+            game_id='EnPassant',
+            ply_count=5,
+            moves=moves,
+            w_agent=w_agent,
+            b_agent=b_agent,
+            environ=environ
+        )
+
+        assert result is None
+        assert environ.turn_index == 5
+
+    def test_queenside_castling(self, agents_and_environ):
+        """
+        White long castles after clearing b1/c1/d1 and avoiding attacked transit squares.
+        Line: 1.d4 d5 2.Nc3 Nc6 3.Bf4 Bf5 4.Qd2 Qd7 5.O-O-O
+        """
+        from training.game_simulation import play_one_game
+        w_agent, b_agent, environ = agents_and_environ
+
+        moves = {
+            'W1': 'd4',
+            'B1': 'd5',
+            'W2': 'Nc3',   # clears b1
+            'B2': 'Nc6',
+            'W3': 'Bf4',   # clears c1
+            'B3': 'Bf5',
+            'W4': 'Qd2',   # clears d1
+            'B4': 'Qd7',
+            'W5': 'O-O-O', # queenside castle
+        }
+
+        result = play_one_game(
+            game_id='CastleLong',
+            ply_count=9,  # up to W5
+            moves=moves,
+            w_agent=w_agent,
+            b_agent=b_agent,
+            environ=environ
+        )
+
+        assert result is None
+        assert environ.turn_index == 9
+
+    def test_extra_moves_beyond_plycount_are_ignored(self, agents_and_environ):
+        """
+        Case B: Data includes legal moves beyond PlyCount.
+        Our loop stops at ply_count and treats the game as valid.
+        """
+        from training.game_simulation import play_one_game
+        w_agent, b_agent, environ = agents_and_environ
+
+        # Provide 4 legal plies but set PlyCount=2
+        moves = {
+            'W1': 'e4',
+            'B1': 'e5',
+            'W2': 'Nf3',
+            'B2': 'Nc6',
+        }
+
+        result = play_one_game(
+            game_id='ExtraMovesBeyondPlyCount',
+            ply_count=2,   # stop after W1,B1
+            moves=moves,
+            w_agent=w_agent,
+            b_agent=b_agent,
+            environ=environ
+        )
+
+        # Valid: we simply don't consume the extra moves
+        assert result is None
+        assert environ.turn_index == 2
