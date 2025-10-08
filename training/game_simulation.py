@@ -1,3 +1,4 @@
+# project name: clean-chess-db
 # file: training/game_simulation.py
 
 from typing import List, Dict, Optional

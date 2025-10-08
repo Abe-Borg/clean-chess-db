@@ -1,3 +1,4 @@
+# project name: clean-chess-db
 # file: main/play_games.py
 
 import pandas as pd
